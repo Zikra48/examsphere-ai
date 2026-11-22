@@ -1,0 +1,8 @@
+{
+  "name": "ExamSphere AI",
+  "description": "Your Knowledge. Your Exam. Your Progress. Institutional-grade self-assessment studio for transforming study materials into calibrated exams, timed simulations, and mastery analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
