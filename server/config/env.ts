@@ -25,4 +25,6 @@ export const env = {
     ? parsePort(process.env.PORT, 8080)
     : parsePort(process.env.BACKEND_PORT, 3001),
   appUrl: process.env.APP_URL || '',
+  supabaseUrl: (process.env.SUPABASE_URL || '').trim(),
+  supabaseAnonKey: (process.env.SUPABASE_ANON_KEY || '').trim(),
 };
