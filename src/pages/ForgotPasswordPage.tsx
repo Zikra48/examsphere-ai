@@ -9,21 +9,27 @@ import { apiClient } from '../services/apiClient';
 export function ForgotPasswordPage() {
   const { addToast } = useApp();
   const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     if (!email.trim()) return;
     setSubmitting(true);
     try {
       await apiClient.requestPasswordReset(email.trim());
       setSubmitted(true);
       addToast({
-        title: 'Reset Link Simulated',
-        description: 'Live transactional emails connect via Supabase Auth in Stage 2.',
+        title: 'Recovery Email Requested',
+        description: 'Check your inbox for password reset instructions.',
         variant: 'info',
       });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Unable to send password reset email.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -57,7 +63,7 @@ export function ForgotPasswordPage() {
               <h1 className="text-xl font-bold text-slate-900">Check your inbox</h1>
               <p className="text-sm text-slate-600 leading-relaxed">
                 If an account exists for <span className="font-semibold text-slate-900">{email}</span>,
-                password recovery instructions have been queued. (Simulated in Stage 1 Preview Mode.)
+                password recovery instructions have been sent.
               </p>
               <div className="pt-2">
                 <Link to="/login">
@@ -78,6 +84,15 @@ export function ForgotPasswordPage() {
                   Enter the email associated with your workspace to receive a recovery link.
                 </p>
               </div>
+
+              {error && (
+                <div
+                  role="alert"
+                  className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-medium text-rose-700"
+                >
+                  {error}
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Compass } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Compass } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useApp } from '../context/AppContext';
@@ -40,6 +40,7 @@ export function RegisterPage() {
   const [academicLevel, setAcademicLevel] = useState<AcademicLevel>('Undergraduate');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
 
   const strength = useMemo(() => evaluatePasswordStrength(password), [password]);
 
@@ -52,8 +53,21 @@ export function RegisterPage() {
     }
     setSubmitting(true);
     try {
-      await register({ fullName, email, academicLevel });
-      navigate('/dashboard');
+      const result = await register({
+        fullName: fullName.trim(),
+        email: email.trim(),
+        password,
+        academicLevel,
+      });
+      if (result.requiresEmailConfirmation) {
+        setConfirmationEmail(email.trim());
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Unable to create account. Please try again.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -79,25 +93,44 @@ export function RegisterPage() {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Card padding="lg">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-              Create your study account
-            </h1>
-            <p className="mt-1.5 text-sm text-slate-500">
-              Configure your academic track to calibrate exam difficulty and benchmarks.
-            </p>
-          </div>
-
-          {error && (
-            <div
-              role="alert"
-              className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-medium text-rose-700"
-            >
-              {error}
+          {confirmationEmail ? (
+            <div className="text-center space-y-4 py-2">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <h1 className="text-xl font-bold text-slate-900">Confirm your email address</h1>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                We sent a verification link to{' '}
+                <span className="font-semibold text-slate-900">{confirmationEmail}</span>.
+                Confirm your email to activate your account, then sign in.
+              </p>
+              <div className="pt-2">
+                <Link to="/login">
+                  <Button className="w-full">Go to Sign In</Button>
+                </Link>
+              </div>
             </div>
-          )}
+          ) : (
+            <>
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                  Create your study account
+                </h1>
+                <p className="mt-1.5 text-sm text-slate-500">
+                  Configure your academic track to calibrate exam difficulty and benchmarks.
+                </p>
+              </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div
+                  role="alert"
+                  className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-medium text-rose-700"
+                >
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="reg-name" className="block text-sm font-medium text-slate-700 mb-1.5">
                 Full name
@@ -181,12 +214,14 @@ export function RegisterPage() {
             </Button>
           </form>
 
-          <p className="mt-6 pt-5 border-t border-slate-200 text-center text-sm text-slate-600">
-            Already registered?{' '}
-            <Link to="/login" className="font-semibold text-indigo-900 hover:text-indigo-600">
-              Sign in
-            </Link>
-          </p>
+              <p className="mt-6 pt-5 border-t border-slate-200 text-center text-sm text-slate-600">
+                Already registered?{' '}
+                <Link to="/login" className="font-semibold text-indigo-900 hover:text-indigo-600">
+                  Sign in
+                </Link>
+              </p>
+            </>
+          )}
         </Card>
       </div>
     </div>

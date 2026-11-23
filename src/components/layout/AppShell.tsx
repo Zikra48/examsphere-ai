@@ -36,14 +36,23 @@ const NAV_ITEMS = [
 ];
 
 export function AppShell({ title, breadcrumb, actions, children }: AppShellProps) {
-  const { user, logout, previewBannerDismissed, dismissPreviewBanner } = useApp();
+  const { user, isDemoMode, logout, addToast, previewBannerDismissed, dismissPreviewBanner } =
+    useApp();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (err) {
+      addToast({
+        title: 'Sign Out Failed',
+        description: err instanceof Error ? err.message : 'Unable to sign out right now.',
+        variant: 'error',
+      });
+    }
   };
 
   return (
@@ -248,7 +257,11 @@ export function AppShell({ title, breadcrumb, actions, children }: AppShellProps
             {!previewBannerDismissed && (
               <div className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-50 border border-violet-200 text-violet-700 text-xs font-medium whitespace-nowrap shrink-0">
                 <FlaskConical className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                <span>Stage 1 Preview Mode — Simulated Data & Local State</span>
+                <span>
+                  {isDemoMode
+                    ? 'Demo Mode — Sample Data & Local State'
+                    : 'Supabase Auth Active — Local Exam Preview'}
+                </span>
                 <button
                   type="button"
                   onClick={dismissPreviewBanner}
@@ -268,7 +281,11 @@ export function AppShell({ title, breadcrumb, actions, children }: AppShellProps
           <div className="md:hidden bg-violet-50 border-b border-violet-200 px-4 py-1.5 flex items-center justify-between gap-2 text-xs text-violet-800">
             <span className="inline-flex items-center gap-1.5 truncate font-medium">
               <FlaskConical className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">Stage 1 Preview Mode — Simulated Data & Local State</span>
+              <span className="truncate">
+                {isDemoMode
+                  ? 'Demo Mode — Sample Data & Local State'
+                  : 'Supabase Auth Active — Local Exam Preview'}
+              </span>
             </span>
             <button
               type="button"

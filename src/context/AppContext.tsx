@@ -1,8 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { DEMO_USER_PROFILE, INITIAL_ATTEMPTS, INITIAL_EXAMS } from '../data/mockData';
+import { isBrowserSupabaseConfigured } from '../lib/supabase';
 import {
   apiClient,
   computeSubjectProgress,
+  GUEST_USER_PROFILE,
   loadInitialState,
   PersistedAppState,
   saveAppState,
@@ -16,8 +18,12 @@ import {
   UserProfile,
 } from '../types/exam';
 
+type AuthMode = 'supabase' | 'demo' | null;
+
 interface AppContextValue {
   isAuthenticated: boolean;
+  isAuthLoading: boolean;
+  isDemoMode: boolean;
   user: UserProfile;
   exams: Exam[];
   attempts: Attempt[];
@@ -32,9 +38,10 @@ interface AppContextValue {
   register: (payload: {
     fullName: string;
     email: string;
+    password: string;
     academicLevel: UserProfile['academicLevel'];
-  }) => Promise<void>;
-  logout: () => void;
+  }) => Promise<{ requiresEmailConfirmation: boolean }>;
+  logout: () => Promise<void>;
   generateExam: (
     input: ExamGenerationInput,
     onStageChange?: (stage: string) => void
@@ -56,11 +63,58 @@ const AppContext = createContext<AppContextValue | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<PersistedAppState>(() => loadInitialState());
+  const [authMode, setAuthMode] = useState<AuthMode>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(() => isBrowserSupabaseConfigured());
+  const [supabaseUser, setSupabaseUser] = useState<UserProfile | null>(null);
+  const [demoUser, setDemoUser] = useState<UserProfile>(DEMO_USER_PROFILE);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   useEffect(() => {
     saveAppState(state);
   }, [state]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function restoreSession() {
+      if (!isBrowserSupabaseConfigured()) {
+        if (active) setIsAuthLoading(false);
+        return;
+      }
+
+      try {
+        const { session, user } = await apiClient.getAuthSession();
+        if (!active) return;
+        if (session && user) {
+          setSupabaseUser(user);
+          setAuthMode('supabase');
+        }
+      } catch {
+        // Leave unauthenticated if session restoration fails
+      } finally {
+        if (active) setIsAuthLoading(false);
+      }
+    }
+
+    restoreSession();
+
+    const unsubscribe = apiClient.onAuthStateChange((_event, session, user) => {
+      if (!active) return;
+      if (session && user) {
+        setSupabaseUser(user);
+        setAuthMode('supabase');
+      } else {
+        setSupabaseUser(null);
+        setAuthMode((prev) => (prev === 'supabase' ? null : prev));
+      }
+      setIsAuthLoading(false);
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -84,10 +138,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(
     async (email: string, password: string) => {
       const { user } = await apiClient.login(email, password);
-      setState((prev) => ({ ...prev, isAuthenticated: true, user }));
+      setSupabaseUser(user);
+      setAuthMode('supabase');
       addToast({
-        title: 'Signed in to Stage-1 Workspace',
-        description: 'Session active in local state. Supabase Auth connects in Stage 2.',
+        title: 'Signed In',
+        description: `Welcome back, ${user.fullName}.`,
         variant: 'success',
       });
     },
@@ -95,40 +150,60 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const loginDemo = useCallback(async () => {
+    if (authMode === 'supabase') {
+      await apiClient.logout().catch(() => {});
+    }
     const { user } = await apiClient.loginDemo();
-    setState((prev) => ({ ...prev, isAuthenticated: true, user }));
+    setSupabaseUser(null);
+    setDemoUser(user);
+    setAuthMode('demo');
     addToast({
       title: 'Demo Student Workspace Loaded',
-      description: 'Exploring Elena Rostova’s calibrated exam library & analytics.',
+      description: 'Exploring Elena Rostova’s sample exam library & analytics (not signed in to Supabase).',
       variant: 'info',
     });
-  }, [addToast]);
+  }, [addToast, authMode]);
 
   const register = useCallback(
     async (payload: {
       fullName: string;
       email: string;
+      password: string;
       academicLevel: UserProfile['academicLevel'];
     }) => {
-      const { user } = await apiClient.register(payload);
-      setState((prev) => ({ ...prev, isAuthenticated: true, user }));
-      addToast({
-        title: 'Account Created (Local Session)',
-        description: 'Profile initialized locally. Supabase registration connects in Stage 2.',
-        variant: 'success',
-      });
+      const result = await apiClient.register(payload);
+      if (!result.requiresEmailConfirmation && result.session) {
+        setSupabaseUser(result.user);
+        setAuthMode('supabase');
+        addToast({
+          title: 'Account Created',
+          description: 'Your Supabase account is active and ready.',
+          variant: 'success',
+        });
+      } else {
+        addToast({
+          title: 'Confirm Your Email',
+          description: 'Check your inbox for a verification link before signing in.',
+          variant: 'info',
+        });
+      }
+      return { requiresEmailConfirmation: result.requiresEmailConfirmation };
     },
     [addToast]
   );
 
-  const logout = useCallback(() => {
-    setState((prev) => ({ ...prev, isAuthenticated: false }));
+  const logout = useCallback(async () => {
+    if (authMode === 'supabase') {
+      await apiClient.logout();
+    }
+    setSupabaseUser(null);
+    setAuthMode(null);
     addToast({
       title: 'Signed Out',
-      description: 'Your local session exams and attempts remain preserved.',
+      description: 'Your session has ended.',
       variant: 'info',
     });
-  }, [addToast]);
+  }, [addToast, authMode]);
 
   const generateExam = useCallback(
     async (input: ExamGenerationInput, onStageChange?: (stage: string) => void) => {
@@ -139,7 +214,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }));
       addToast({
         title: 'Exam Blueprint Drafted',
-        description: 'Simulated local generator created your questions. Server-side Gemini API connects in Stage 2.',
+        description: 'Simulated local generator created your questions. Server-side Gemini API connects in a later step.',
         variant: 'success',
       });
       return generated;
@@ -161,7 +236,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
       addToast({
         title: 'Examination Saved to Library',
-        description: 'Changes stored in browser local state (Supabase DB sync ready).',
+        description: 'Changes stored in browser local state.',
         variant: 'success',
       });
       return saved;
@@ -214,40 +289,54 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateProfile = useCallback(
     async (profile: UserProfile) => {
       const updated = await apiClient.updateProfile(profile);
-      setState((prev) => ({ ...prev, user: updated }));
+      if (authMode === 'supabase') {
+        setSupabaseUser(updated);
+      } else if (authMode === 'demo') {
+        setDemoUser(updated);
+      }
       addToast({
         title: 'Preferences Saved',
-        description: 'Profile and exam defaults updated in local state.',
+        description: 'Profile preferences updated for your current session.',
         variant: 'success',
       });
     },
-    [addToast]
+    [addToast, authMode]
   );
 
   const resetDemoData = useCallback(() => {
     const fresh: PersistedAppState = {
-      isAuthenticated: state.isAuthenticated,
-      user: DEMO_USER_PROFILE,
       exams: INITIAL_EXAMS,
       attempts: INITIAL_ATTEMPTS,
       previewBannerDismissed: false,
     };
     setState(fresh);
+    setDemoUser(DEMO_USER_PROFILE);
     addToast({
       title: 'Workspace Reset to Seeded Data',
       description: 'Restored default academic exams and historical attempts.',
       variant: 'info',
     });
-  }, [addToast, state.isAuthenticated]);
+  }, [addToast]);
 
   const subjectProgress = useMemo(
     () => computeSubjectProgress(state.exams, state.attempts),
     [state.exams, state.attempts]
   );
 
+  const isAuthenticated = authMode === 'supabase' || authMode === 'demo';
+  const isDemoMode = authMode === 'demo';
+  const activeUser =
+    authMode === 'supabase' && supabaseUser
+      ? supabaseUser
+      : authMode === 'demo'
+        ? demoUser
+        : GUEST_USER_PROFILE;
+
   const value: AppContextValue = {
-    isAuthenticated: state.isAuthenticated,
-    user: state.user,
+    isAuthenticated,
+    isAuthLoading,
+    isDemoMode,
+    user: activeUser,
     exams: state.exams,
     attempts: state.attempts,
     subjectProgress,

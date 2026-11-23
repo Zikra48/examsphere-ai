@@ -27,7 +27,7 @@ const SAMPLE_OPTIONS = [
 ];
 
 export function LandingPage() {
-  const { isAuthenticated, loginDemo } = useApp();
+  const { isAuthenticated, loginDemo, addToast } = useApp();
   const navigate = useNavigate();
   const [selectedDemoOption, setSelectedDemoOption] = useState<number | null>(1);
   const [showExplanation, setShowExplanation] = useState(true);
@@ -38,6 +38,12 @@ export function LandingPage() {
     try {
       await loginDemo();
       navigate('/dashboard');
+    } catch (err) {
+      addToast({
+        title: 'Demo Launch Failed',
+        description: err instanceof Error ? err.message : 'Unable to launch demo workspace.',
+        variant: 'error',
+      });
     } finally {
       setDemoLoading(false);
     }

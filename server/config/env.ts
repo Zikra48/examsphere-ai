@@ -1,6 +1,13 @@
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 
-dotenv.config();
+for (const envFile of ['.env', '.env.local']) {
+  const fullPath = path.resolve(process.cwd(), envFile);
+  if (fs.existsSync(fullPath)) {
+    dotenv.config({ path: fullPath, override: true });
+  }
+}
 
 const nodeEnv = process.env.NODE_ENV === 'production' ? 'production' : 'development';
 const isProduction = nodeEnv === 'production';

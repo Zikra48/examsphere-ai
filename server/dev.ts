@@ -1,10 +1,19 @@
 import { ChildProcess, spawn } from 'child_process';
+import dotenv from 'dotenv';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
+
+for (const envFile of ['.env', '.env.local']) {
+  const fullPath = path.resolve(projectRoot, envFile);
+  if (fs.existsSync(fullPath)) {
+    dotenv.config({ path: fullPath, override: true });
+  }
+}
 
 const tsxCli = path.resolve(projectRoot, 'node_modules', 'tsx', 'dist', 'cli.mjs');
 const viteCli = path.resolve(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js');

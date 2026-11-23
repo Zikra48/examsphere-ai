@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { RotateCcw, Save, ShieldAlert } from 'lucide-react';
 import { AppShell } from '../components/layout/AppShell';
 import { Button } from '../components/ui/Button';
@@ -17,7 +17,7 @@ const ACADEMIC_LEVELS: AcademicLevel[] = [
 const DIFFICULTIES: DifficultyLevel[] = ['Easy', 'Medium', 'Hard', 'Mixed'];
 
 export function SettingsPage() {
-  const { user, updateProfile, resetDemoData } = useApp();
+  const { user, isDemoMode, updateProfile, resetDemoData } = useApp();
 
   const [fullName, setFullName] = useState(user.fullName);
   const [email, setEmail] = useState(user.email);
@@ -30,6 +30,15 @@ export function SettingsPage() {
 
   const [saving, setSaving] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+
+  useEffect(() => {
+    setFullName(user.fullName);
+    setEmail(user.email);
+    setAcademicLevel(user.academicLevel);
+    setTargetExam(user.targetExam);
+    setDefaultDifficulty(user.defaultDifficulty);
+    setDefaultTimerMinutes(user.defaultTimerMinutes);
+  }, [user]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,12 +60,14 @@ export function SettingsPage() {
 
   const handleConfirmReset = () => {
     resetDemoData();
-    setFullName('Elena Rostova');
-    setEmail('elena.rostova@university.edu');
-    setAcademicLevel('Undergraduate');
-    setTargetExam('STEM Honours & AWS Associate');
-    setDefaultDifficulty('Medium');
-    setDefaultTimerMinutes(40);
+    if (isDemoMode) {
+      setFullName('Elena Rostova');
+      setEmail('elena.rostova@university.edu');
+      setAcademicLevel('Undergraduate');
+      setTargetExam('STEM Honours & AWS Associate');
+      setDefaultDifficulty('Medium');
+      setDefaultTimerMinutes(40);
+    }
     setResetOpen(false);
   };
 

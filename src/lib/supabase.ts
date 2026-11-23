@@ -32,8 +32,31 @@ function isForbiddenSecretKey(key: string): boolean {
   return false;
 }
 
+function isValidHttpUrl(value: string): boolean {
+  if (!value) return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
+export function getSupabaseBrowserConfigError(): string | null {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return 'Supabase authentication is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.';
+  }
+  if (!isValidHttpUrl(supabaseUrl)) {
+    return 'Supabase URL configuration is invalid. VITE_SUPABASE_URL must be a valid https:// project URL.';
+  }
+  if (isForbiddenSecretKey(supabaseAnonKey)) {
+    return 'Unsafe Supabase key detected in browser configuration. Only the public anon key is permitted.';
+  }
+  return null;
+}
+
 export function isBrowserSupabaseConfigured(): boolean {
-  return Boolean(supabaseUrl && supabaseAnonKey && !isForbiddenSecretKey(supabaseAnonKey));
+  return getSupabaseBrowserConfigError() === null;
 }
 
 export function getSupabaseBrowserClient(): SupabaseClient | null {
@@ -50,6 +73,18 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
     });
   }
   return browserClient;
+}
+
+export function requireSupabaseBrowserClient(): SupabaseClient {
+  const configError = getSupabaseBrowserConfigError();
+  if (configError) {
+    throw new Error(configError);
+  }
+  const client = getSupabaseBrowserClient();
+  if (!client) {
+    throw new Error('Supabase authentication client could not be initialized.');
+  }
+  return client;
 }
 
 export interface ClientConnectionCheckResult {

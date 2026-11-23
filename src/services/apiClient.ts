@@ -1,3 +1,4 @@
+import type { AuthChangeEvent, Session, User as SupabaseUser } from '@supabase/supabase-js';
 import {
   DEMO_USER_PROFILE,
   INITIAL_ATTEMPTS,
@@ -5,6 +6,11 @@ import {
   INITIAL_SUBJECT_PROGRESS,
 } from '../data/mockData';
 import {
+  getSupabaseBrowserClient,
+  requireSupabaseBrowserClient,
+} from '../lib/supabase';
+import {
+  AcademicLevel,
   Attempt,
   AttemptAnswer,
   DifficultyLevel,
@@ -19,11 +25,63 @@ import {
 const STORAGE_KEY = 'examsphere_stage1_state_v1';
 
 export interface PersistedAppState {
-  isAuthenticated: boolean;
-  user: UserProfile;
   exams: Exam[];
   attempts: Attempt[];
   previewBannerDismissed: boolean;
+}
+
+export const GUEST_USER_PROFILE: UserProfile = {
+  id: '',
+  fullName: 'Student',
+  email: '',
+  academicLevel: 'Undergraduate',
+  targetExam: 'Academic & Certification Prep',
+  defaultDifficulty: 'Medium',
+  defaultTimerMinutes: 40,
+  studyStreakDays: 1,
+  joinedAt: new Date(0).toISOString(),
+};
+
+const VALID_ACADEMIC_LEVELS: AcademicLevel[] = [
+  'High School',
+  'Undergraduate',
+  'Postgraduate',
+  'Professional Certification',
+];
+
+function formatNameFromEmail(email: string): string {
+  const localPart = email.split('@')[0] ?? '';
+  const formatted = localPart
+    .replace(/[._-]+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return formatted || 'Student';
+}
+
+export function mapSupabaseUserToProfile(supabaseUser: SupabaseUser): UserProfile {
+  const metadata = (supabaseUser.user_metadata ?? {}) as Record<string, unknown>;
+  const rawFullName = typeof metadata.full_name === 'string' ? metadata.full_name.trim() : '';
+  const rawAcademicLevel =
+    typeof metadata.academic_level === 'string' ? metadata.academic_level : '';
+  const academicLevel: AcademicLevel = VALID_ACADEMIC_LEVELS.includes(
+    rawAcademicLevel as AcademicLevel
+  )
+    ? (rawAcademicLevel as AcademicLevel)
+    : 'Undergraduate';
+
+  const email = supabaseUser.email ?? '';
+
+  return {
+    id: supabaseUser.id,
+    fullName: rawFullName || (email ? formatNameFromEmail(email) : 'Student'),
+    email,
+    academicLevel,
+    targetExam: 'Academic & Certification Prep',
+    defaultDifficulty: 'Medium',
+    defaultTimerMinutes: 40,
+    studyStreakDays: 1,
+    joinedAt: supabaseUser.created_at || new Date().toISOString(),
+  };
 }
 
 function sleep(ms: number): Promise<void> {
@@ -38,18 +96,20 @@ export function loadInitialState(): PersistedAppState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as PersistedAppState;
+      const parsed = JSON.parse(raw) as Partial<PersistedAppState>;
       if (parsed && Array.isArray(parsed.exams) && Array.isArray(parsed.attempts)) {
-        return parsed;
+        return {
+          exams: parsed.exams,
+          attempts: parsed.attempts,
+          previewBannerDismissed: Boolean(parsed.previewBannerDismissed),
+        };
       }
     }
   } catch {
-    // Fallback to seeded demo state if storage is unavailable
+    // Fallback to seeded workspace state if storage is unavailable
   }
 
   return {
-    isAuthenticated: false,
-    user: DEMO_USER_PROFILE,
     exams: INITIAL_EXAMS,
     attempts: INITIAL_ATTEMPTS,
     previewBannerDismissed: false,
@@ -58,7 +118,12 @@ export function loadInitialState(): PersistedAppState {
 
 export function saveAppState(state: PersistedAppState): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const sanitized: PersistedAppState = {
+      exams: state.exams,
+      attempts: state.attempts,
+      previewBannerDismissed: state.previewBannerDismissed,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
   } catch {
     // Ignore quota errors in restricted sandboxes
   }
@@ -165,51 +230,125 @@ const CONCEPT_STEMS = [
 ];
 
 export const apiClient = {
-  async login(email: string, _password: string): Promise<{ user: UserProfile }> {
-    // TODO: Connect Supabase Auth (`supabase.auth.signInWithPassword`)
-    await sleep(randomLatency(600, 900));
-    const cleanName = email
-      .split('@')[0]
-      .replace(/[._-]+/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase());
+  async getAuthSession(): Promise<{ session: Session | null; user: UserProfile | null }> {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      return { session: null, user: null };
+    }
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      throw new Error(error.message);
+    }
+    const session = data.session ?? null;
     return {
-      user: {
-        ...DEMO_USER_PROFILE,
-        email,
-        fullName: cleanName || DEMO_USER_PROFILE.fullName,
-      },
+      session,
+      user: session?.user ? mapSupabaseUserToProfile(session.user) : null,
+    };
+  },
+
+  onAuthStateChange(
+    callback: (event: AuthChangeEvent, session: Session | null, user: UserProfile | null) => void
+  ): () => void {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) {
+      return () => {};
+    }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      callback(event, session, session?.user ? mapSupabaseUserToProfile(session.user) : null);
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
+  },
+
+  async login(email: string, password: string): Promise<{ user: UserProfile; session: Session }> {
+    const supabase = requireSupabaseBrowserClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+    if (!data.user || !data.session) {
+      throw new Error('Sign-in succeeded without an active session. Please verify your email or try again.');
+    }
+
+    return {
+      user: mapSupabaseUserToProfile(data.user),
+      session: data.session,
     };
   },
 
   async loginDemo(): Promise<{ user: UserProfile }> {
-    // TODO: Connect Supabase Auth demo session or guest token
-    await sleep(600);
+    await sleep(300);
     return { user: DEMO_USER_PROFILE };
   },
 
   async register(payload: {
     fullName: string;
     email: string;
+    password: string;
     academicLevel: UserProfile['academicLevel'];
-  }): Promise<{ user: UserProfile }> {
-    // TODO: Connect Supabase Auth (`supabase.auth.signUp`) + insert row into `profiles`
-    await sleep(randomLatency(650, 950));
+  }): Promise<{
+    user: UserProfile;
+    session: Session | null;
+    requiresEmailConfirmation: boolean;
+  }> {
+    const supabase = requireSupabaseBrowserClient();
+    const trimmedName = payload.fullName.trim();
+    const trimmedEmail = payload.email.trim();
+
+    const { data, error } = await supabase.auth.signUp({
+      email: trimmedEmail,
+      password: payload.password,
+      options: {
+        data: {
+          full_name: trimmedName,
+          academic_level: payload.academicLevel,
+        },
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+    if (!data.user) {
+      throw new Error('Registration could not be completed. Please try again.');
+    }
+
+    const mappedUser = mapSupabaseUserToProfile(data.user);
     return {
       user: {
-        ...DEMO_USER_PROFILE,
-        id: `usr_${Date.now()}`,
-        fullName: payload.fullName.trim(),
-        email: payload.email.trim(),
+        ...mappedUser,
+        fullName: mappedUser.fullName || trimmedName,
         academicLevel: payload.academicLevel,
-        studyStreakDays: 1,
-        joinedAt: new Date().toISOString(),
       },
+      session: data.session ?? null,
+      requiresEmailConfirmation: !data.session,
     };
   },
 
-  async requestPasswordReset(_email: string): Promise<{ sent: boolean }> {
-    // TODO: Connect Supabase Auth (`supabase.auth.resetPasswordForEmail`)
-    await sleep(randomLatency(600, 850));
+  async logout(): Promise<void> {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  async requestPasswordReset(email: string): Promise<{ sent: boolean }> {
+    const supabase = requireSupabaseBrowserClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/login`,
+    });
+    if (error) {
+      throw new Error(error.message);
+    }
     return { sent: true };
   },
 

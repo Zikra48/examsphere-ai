@@ -26,16 +26,25 @@ export function LoginPage() {
     try {
       await login(email.trim(), password);
       navigate('/dashboard');
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Unable to sign in. Please check your credentials.'
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDemoLogin = async () => {
+    setError('');
     setDemoLoading(true);
     try {
       await loginDemo();
       navigate('/dashboard');
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Unable to load the demo workspace.'
+      );
     } finally {
       setDemoLoading(false);
     }
