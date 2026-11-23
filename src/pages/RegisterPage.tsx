@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, Compass } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useApp } from '../context/AppContext';
+import { getSupabaseBrowserConfigError } from '../lib/supabase';
 import { AcademicLevel } from '../types/exam';
 
 const ACADEMIC_LEVELS: AcademicLevel[] = [
@@ -42,11 +43,16 @@ export function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
 
+  const configError = getSupabaseBrowserConfigError();
   const strength = useMemo(() => evaluatePasswordStrength(password), [password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (configError) {
+      setError(configError);
+      return;
+    }
     if (!fullName.trim() || !email.trim() || password.length < 6) {
       setError('Please enter your full name, a valid email, and a password of at least 6 characters.');
       return;
@@ -65,6 +71,7 @@ export function RegisterPage() {
         navigate('/dashboard');
       }
     } catch (err) {
+      console.error('[ExamSphere RegisterPage] Registration failed:', err);
       setError(
         err instanceof Error ? err.message : 'Unable to create account. Please try again.'
       );
@@ -72,6 +79,8 @@ export function RegisterPage() {
       setSubmitting(false);
     }
   };
+
+  const activeError = error || configError;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4 sm:px-6">
@@ -121,12 +130,12 @@ export function RegisterPage() {
                 </p>
               </div>
 
-              {error && (
+              {activeError && (
                 <div
                   role="alert"
                   className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-medium text-rose-700"
                 >
-                  {error}
+                  {activeError}
                 </div>
               )}
 

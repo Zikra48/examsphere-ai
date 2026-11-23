@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, Compass, Mail } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useApp } from '../context/AppContext';
+import { getSupabaseBrowserConfigError } from '../lib/supabase';
 import { apiClient } from '../services/apiClient';
 
 export function ForgotPasswordPage() {
@@ -13,9 +14,15 @@ export function ForgotPasswordPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const configError = getSupabaseBrowserConfigError();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (configError) {
+      setError(configError);
+      return;
+    }
     if (!email.trim()) return;
     setSubmitting(true);
     try {
@@ -27,6 +34,7 @@ export function ForgotPasswordPage() {
         variant: 'info',
       });
     } catch (err) {
+      console.error('[ExamSphere ForgotPasswordPage] Reset request failed:', err);
       setError(
         err instanceof Error ? err.message : 'Unable to send password reset email.'
       );
@@ -34,6 +42,8 @@ export function ForgotPasswordPage() {
       setSubmitting(false);
     }
   };
+
+  const activeError = error || configError;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4 sm:px-6">
@@ -85,12 +95,12 @@ export function ForgotPasswordPage() {
                 </p>
               </div>
 
-              {error && (
+              {activeError && (
                 <div
                   role="alert"
                   className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-medium text-rose-700"
                 >
-                  {error}
+                  {activeError}
                 </div>
               )}
 

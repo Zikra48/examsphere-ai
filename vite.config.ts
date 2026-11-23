@@ -1,18 +1,10 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
-  for (const envFile of ['.env', '.env.local']) {
-    const fullPath = path.resolve(__dirname, envFile);
-    if (fs.existsSync(fullPath)) {
-      dotenv.config({path: fullPath, override: true});
-    }
-  }
-
   return {
     plugins: [
       react(),

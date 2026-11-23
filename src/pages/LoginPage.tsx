@@ -1,32 +1,75 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Compass, UserCheck } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Compass, MailCheck, RefreshCw, UserCheck } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useApp } from '../context/AppContext';
+import { getSupabaseBrowserConfigError } from '../lib/supabase';
+import {
+  apiClient,
+  AuthConnectionDiagnostics,
+  AuthFlowError,
+} from '../services/apiClient';
 
 export function LoginPage() {
-  const { login, loginDemo } = useApp();
+  const { login, loginDemo, addToast } = useApp();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
+  const [canResendConfirmation, setCanResendConfirmation] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
+
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<AuthConnectionDiagnostics | null>(null);
+  const [checkingDiagnostics, setCheckingDiagnostics] = useState(false);
+
+  const configError = getSupabaseBrowserConfigError();
+
+  const runDiagnostics = useCallback(async () => {
+    setCheckingDiagnostics(true);
+    try {
+      const result = await apiClient.checkAuthConnectionStatus();
+      setDiagnostics(result);
+    } finally {
+      setCheckingDiagnostics(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void runDiagnostics();
+  }, [runDiagnostics]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setCanResendConfirmation(false);
+    setResendSuccess('');
+
+    if (configError) {
+      setError(configError);
+      return;
+    }
+
     if (!email.trim() || !password) {
       setError('Enter both your email address and password.');
       return;
     }
+
     setSubmitting(true);
     try {
       await login(email.trim(), password);
       navigate('/dashboard');
     } catch (err) {
+      console.error('[ExamSphere LoginPage] Sign-in failed:', err);
+      const isUnconfirmed =
+        (err instanceof AuthFlowError && err.code === 'email_not_confirmed') ||
+        (err instanceof Error && err.message.toLowerCase().includes('email not confirmed'));
+      setCanResendConfirmation(isUnconfirmed);
       setError(
         err instanceof Error ? err.message : 'Unable to sign in. Please check your credentials.'
       );
@@ -35,13 +78,42 @@ export function LoginPage() {
     }
   };
 
+  const handleResendConfirmation = async () => {
+    if (!email.trim()) {
+      setError('Enter your email address above before resending confirmation.');
+      return;
+    }
+    setResending(true);
+    setResendSuccess('');
+    try {
+      await apiClient.resendConfirmationEmail(email.trim());
+      const msg = `Confirmation email resent to ${email.trim()}. Check your inbox and spam folder.`;
+      setResendSuccess(msg);
+      addToast({
+        title: 'Confirmation Email Sent',
+        description: msg,
+        variant: 'info',
+      });
+    } catch (err) {
+      console.error('[ExamSphere LoginPage] Resend confirmation failed:', err);
+      setError(
+        err instanceof Error ? err.message : 'Unable to resend confirmation email.'
+      );
+    } finally {
+      setResending(false);
+    }
+  };
+
   const handleDemoLogin = async () => {
     setError('');
+    setCanResendConfirmation(false);
+    setResendSuccess('');
     setDemoLoading(true);
     try {
       await loginDemo();
       navigate('/dashboard');
     } catch (err) {
+      console.error('[ExamSphere LoginPage] Demo login failed:', err);
       setError(
         err instanceof Error ? err.message : 'Unable to load the demo workspace.'
       );
@@ -49,6 +121,8 @@ export function LoginPage() {
       setDemoLoading(false);
     }
   };
+
+  const activeError = error || configError;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4 sm:px-6">
@@ -98,12 +172,33 @@ export function LoginPage() {
             </div>
           </div>
 
-          {error && (
+          {activeError && (
             <div
               role="alert"
-              className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-medium text-rose-700"
+              className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-medium text-rose-700 space-y-2"
             >
-              {error}
+              <p>{activeError}</p>
+              {canResendConfirmation && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  isLoading={resending}
+                  onClick={handleResendConfirmation}
+                  leftIcon={<MailCheck className="w-3.5 h-3.5" />}
+                >
+                  Resend confirmation email
+                </Button>
+              )}
+            </div>
+          )}
+
+          {resendSuccess && (
+            <div
+              role="status"
+              className="mb-4 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700"
+            >
+              {resendSuccess}
             </div>
           )}
 
@@ -167,6 +262,61 @@ export function LoginPage() {
               Create an account
             </Link>
           </p>
+
+          <div className="mt-4 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setDebugOpen((prev) => !prev)}
+              aria-expanded={debugOpen}
+              className="w-full flex items-center justify-between text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+            >
+              <span>Connection status</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform ${debugOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {debugOpen && (
+              <div className="mt-2.5 p-3 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-mono text-slate-600 space-y-1">
+                <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-200">
+                  <span className="font-semibold text-slate-700">Auth Diagnostics</span>
+                  <button
+                    type="button"
+                    onClick={() => void runDiagnostics()}
+                    disabled={checkingDiagnostics}
+                    className="inline-flex items-center gap-1 text-indigo-900 hover:text-indigo-600 cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${checkingDiagnostics ? 'animate-spin' : ''}`} />
+                    <span>Recheck</span>
+                  </button>
+                </div>
+                <p>
+                  VITE_SUPABASE_URL:{' '}
+                  <span className="font-semibold text-slate-800">
+                    {String(Boolean(diagnostics?.hasViteSupabaseUrl))}
+                  </span>
+                </p>
+                <p>
+                  VITE_SUPABASE_ANON_KEY:{' '}
+                  <span className="font-semibold text-slate-800">
+                    {String(Boolean(diagnostics?.hasViteSupabaseAnonKey))}
+                  </span>
+                </p>
+                <p>
+                  Supabase host:{' '}
+                  <span className="font-semibold text-slate-800">
+                    {diagnostics?.supabaseUrlHost ?? 'not configured'}
+                  </span>
+                </p>
+                <p>
+                  getSession():{' '}
+                  <span className="font-semibold text-slate-800">
+                    {diagnostics?.sessionStatus ?? 'checking...'}
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
         </Card>
       </div>
     </div>

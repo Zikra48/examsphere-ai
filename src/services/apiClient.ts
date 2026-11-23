@@ -7,7 +7,9 @@ import {
 } from '../data/mockData';
 import {
   getSupabaseBrowserClient,
+  getSupabaseEnvDiagnostics,
   requireSupabaseBrowserClient,
+  SupabaseEnvDiagnostics,
 } from '../lib/supabase';
 import {
   AcademicLevel,
@@ -56,6 +58,90 @@ function formatNameFromEmail(email: string): string {
     .trim()
     .replace(/\b\w/g, (c) => c.toUpperCase());
   return formatted || 'Student';
+}
+
+export type AuthErrorCode =
+  | 'config_error'
+  | 'invalid_credentials'
+  | 'email_not_confirmed'
+  | 'user_already_registered'
+  | 'weak_password'
+  | 'rate_limited'
+  | 'unknown';
+
+export class AuthFlowError extends Error {
+  code: AuthErrorCode;
+  rawMessage: string;
+
+  constructor(message: string, code: AuthErrorCode = 'unknown', rawMessage?: string) {
+    super(message);
+    this.name = 'AuthFlowError';
+    this.code = code;
+    this.rawMessage = rawMessage ?? message;
+  }
+}
+
+export interface AuthConnectionDiagnostics extends SupabaseEnvDiagnostics {
+  sessionStatus: string;
+}
+
+function toAuthFlowError(
+  operation: string,
+  error: { message?: string; status?: number; code?: string }
+): AuthFlowError {
+  console.error(`[ExamSphere Auth] ${operation} error:`, error);
+
+  const raw = (error.message || 'Authentication request failed.').trim();
+  const lower = raw.toLowerCase();
+
+  if (lower.includes('email not confirmed')) {
+    return new AuthFlowError(
+      `Email not confirmed: ${raw}. Please check your inbox for the verification link or resend it below.`,
+      'email_not_confirmed',
+      raw
+    );
+  }
+
+  if (lower.includes('invalid login credentials')) {
+    return new AuthFlowError(
+      `Invalid email or password (${raw}). Double-check your credentials or confirm your email if you just signed up.`,
+      'invalid_credentials',
+      raw
+    );
+  }
+
+  if (lower.includes('user already registered') || lower.includes('already been registered')) {
+    return new AuthFlowError(
+      `An account with this email is already registered (${raw}). Try signing in or resetting your password.`,
+      'user_already_registered',
+      raw
+    );
+  }
+
+  if (
+    lower.includes('password') &&
+    (lower.includes('weak') ||
+      lower.includes('least') ||
+      lower.includes('character') ||
+      lower.includes('strength'))
+  ) {
+    return new AuthFlowError(`Weak password: ${raw}`, 'weak_password', raw);
+  }
+
+  if (
+    error.status === 429 ||
+    lower.includes('rate limit') ||
+    lower.includes('too many requests') ||
+    lower.includes('security purposes')
+  ) {
+    return new AuthFlowError(
+      `Too many authentication requests. Please wait a moment and try again (${raw}).`,
+      'rate_limited',
+      raw
+    );
+  }
+
+  return new AuthFlowError(raw, 'unknown', raw);
 }
 
 export function mapSupabaseUserToProfile(supabaseUser: SupabaseUser): UserProfile {
@@ -230,6 +316,42 @@ const CONCEPT_STEMS = [
 ];
 
 export const apiClient = {
+  async checkAuthConnectionStatus(): Promise<AuthConnectionDiagnostics> {
+    const envDiagnostics = getSupabaseEnvDiagnostics();
+    const supabase = getSupabaseBrowserClient();
+
+    if (!supabase) {
+      const result: AuthConnectionDiagnostics = {
+        ...envDiagnostics,
+        sessionStatus: envDiagnostics.configError || 'Client unavailable',
+      };
+      console.info('[ExamSphere Auth Diagnostics]', result);
+      return result;
+    }
+
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      const sessionStatus = error
+        ? `Error: ${error.message}`
+        : data.session
+          ? `Active session (${data.session.user.email ?? data.session.user.id})`
+          : 'No active session (getSession succeeded)';
+      const result: AuthConnectionDiagnostics = {
+        ...envDiagnostics,
+        sessionStatus,
+      };
+      console.info('[ExamSphere Auth Diagnostics]', result);
+      return result;
+    } catch (err) {
+      const result: AuthConnectionDiagnostics = {
+        ...envDiagnostics,
+        sessionStatus: err instanceof Error ? `Exception: ${err.message}` : 'getSession threw',
+      };
+      console.info('[ExamSphere Auth Diagnostics]', result);
+      return result;
+    }
+  },
+
   async getAuthSession(): Promise<{ session: Session | null; user: UserProfile | null }> {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
@@ -237,7 +359,8 @@ export const apiClient = {
     }
     const { data, error } = await supabase.auth.getSession();
     if (error) {
-      throw new Error(error.message);
+      console.error('[ExamSphere Auth] getSession error:', error);
+      throw new AuthFlowError(error.message, 'unknown', error.message);
     }
     const session = data.session ?? null;
     return {
@@ -271,10 +394,13 @@ export const apiClient = {
     });
 
     if (error) {
-      throw new Error(error.message);
+      throw toAuthFlowError('signInWithPassword', error);
     }
     if (!data.user || !data.session) {
-      throw new Error('Sign-in succeeded without an active session. Please verify your email or try again.');
+      throw new AuthFlowError(
+        'Sign-in completed without an active session. Please confirm your email or try again.',
+        'email_not_confirmed'
+      );
     }
 
     return {
@@ -310,14 +436,23 @@ export const apiClient = {
           full_name: trimmedName,
           academic_level: payload.academicLevel,
         },
+        emailRedirectTo: `${window.location.origin}/login`,
       },
     });
 
     if (error) {
-      throw new Error(error.message);
+      throw toAuthFlowError('signUp', error);
     }
     if (!data.user) {
-      throw new Error('Registration could not be completed. Please try again.');
+      throw new AuthFlowError('Registration could not be completed. Please try again.');
+    }
+
+    if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      console.error('[ExamSphere Auth] signUp returned empty identities for existing email:', data.user);
+      throw new AuthFlowError(
+        'An account with this email is already registered. Please sign in or reset your password.',
+        'user_already_registered'
+      );
     }
 
     const mappedUser = mapSupabaseUserToProfile(data.user);
@@ -332,12 +467,28 @@ export const apiClient = {
     };
   },
 
+  async resendConfirmationEmail(email: string): Promise<void> {
+    const supabase = requireSupabaseBrowserClient();
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email.trim(),
+      options: {
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
+    });
+
+    if (error) {
+      throw toAuthFlowError('resendConfirmationEmail', error);
+    }
+  },
+
   async logout(): Promise<void> {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
     const { error } = await supabase.auth.signOut();
     if (error) {
-      throw new Error(error.message);
+      console.error('[ExamSphere Auth] signOut error:', error);
+      throw new AuthFlowError(error.message, 'unknown', error.message);
     }
   },
 
@@ -347,7 +498,7 @@ export const apiClient = {
       redirectTo: `${window.location.origin}/login`,
     });
     if (error) {
-      throw new Error(error.message);
+      throw toAuthFlowError('resetPasswordForEmail', error);
     }
     return { sent: true };
   },

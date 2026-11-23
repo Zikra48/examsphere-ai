@@ -15,6 +15,7 @@ const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
 const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
 let browserClient: SupabaseClient | null = null;
+let hasLoggedConfigError = false;
 
 function isForbiddenSecretKey(key: string): boolean {
   if (!key) return false;
@@ -32,31 +33,63 @@ function isForbiddenSecretKey(key: string): boolean {
   return false;
 }
 
-function isValidHttpUrl(value: string): boolean {
-  if (!value) return false;
+function parseHttpUrl(value: string): URL | null {
+  if (!value) return null;
   try {
     const parsed = new URL(value);
-    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
 export function getSupabaseBrowserConfigError(): string | null {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return 'Supabase authentication is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.';
+  const missing: string[] = [];
+  if (!supabaseUrl) missing.push('VITE_SUPABASE_URL');
+  if (!supabaseAnonKey) missing.push('VITE_SUPABASE_ANON_KEY');
+
+  let errorMsg: string | null = null;
+
+  if (missing.length > 0) {
+    errorMsg = `Supabase is not configured: missing ${missing.join(' / ')}`;
+  } else if (!parseHttpUrl(supabaseUrl)) {
+    errorMsg =
+      'Supabase URL configuration is invalid: VITE_SUPABASE_URL must be a valid https:// project URL.';
+  } else if (isForbiddenSecretKey(supabaseAnonKey)) {
+    errorMsg =
+      'Unsafe Supabase key detected in browser configuration. Only the public publishable/anon key is permitted.';
   }
-  if (!isValidHttpUrl(supabaseUrl)) {
-    return 'Supabase URL configuration is invalid. VITE_SUPABASE_URL must be a valid https:// project URL.';
+
+  if (errorMsg && !hasLoggedConfigError) {
+    hasLoggedConfigError = true;
+    console.error(`[ExamSphere Supabase] ${errorMsg}`, {
+      hasViteSupabaseUrl: Boolean(supabaseUrl),
+      hasViteSupabaseAnonKey: Boolean(supabaseAnonKey),
+    });
   }
-  if (isForbiddenSecretKey(supabaseAnonKey)) {
-    return 'Unsafe Supabase key detected in browser configuration. Only the public anon key is permitted.';
-  }
-  return null;
+
+  return errorMsg;
 }
 
 export function isBrowserSupabaseConfigured(): boolean {
   return getSupabaseBrowserConfigError() === null;
+}
+
+export interface SupabaseEnvDiagnostics {
+  hasViteSupabaseUrl: boolean;
+  hasViteSupabaseAnonKey: boolean;
+  supabaseUrlHost: string | null;
+  configError: string | null;
+}
+
+export function getSupabaseEnvDiagnostics(): SupabaseEnvDiagnostics {
+  const parsed = parseHttpUrl(supabaseUrl);
+  return {
+    hasViteSupabaseUrl: Boolean(supabaseUrl),
+    hasViteSupabaseAnonKey: Boolean(supabaseAnonKey),
+    supabaseUrlHost: parsed ? parsed.host : null,
+    configError: getSupabaseBrowserConfigError(),
+  };
 }
 
 export function getSupabaseBrowserClient(): SupabaseClient | null {
