@@ -35,8 +35,9 @@ export function createApp() {
   // Unmatched API endpoints return structured JSON 404
   app.use('/api', notFoundApiHandler);
 
-  // Serve built React frontend in production
-  if (env.isProduction) {
+  // Serve built React frontend in standalone production (Vercel serves dist/ at the CDN edge)
+  const isVercel = Boolean(process.env.VERCEL);
+  if (env.isProduction && !isVercel) {
     if (fs.existsSync(distDir)) {
       app.use(express.static(distDir));
 
@@ -60,19 +61,24 @@ export function createApp() {
   return app;
 }
 
-const app = createApp();
-const server = app.listen(env.port, '0.0.0.0', () => {
-  console.log(
-    `[ExamSphere Server] Listening on http://0.0.0.0:${env.port} (${env.nodeEnv})`
-  );
-});
+const isVercel = Boolean(process.env.VERCEL);
 
-function shutdown(signal: string) {
-  console.log(`[ExamSphere Server] Received ${signal}, shutting down gracefully...`);
-  server.close(() => {
-    process.exit(0);
+if (!isVercel) {
+  const app = createApp();
+  const server = app.listen(env.port, '0.0.0.0', () => {
+    console.log(
+      `[ExamSphere Server] Listening on http://0.0.0.0:${env.port} (${env.nodeEnv})`
+    );
   });
+
+  function shutdown(signal: string) {
+    console.log(`[ExamSphere Server] Received ${signal}, shutting down gracefully...`);
+    server.close(() => {
+      process.exit(0);
+    });
+  }
+
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
