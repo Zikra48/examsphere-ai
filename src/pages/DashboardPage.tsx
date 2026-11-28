@@ -43,9 +43,7 @@ export function DashboardPage() {
   const recentTrendDelta =
     sortedAttempts.length >= 2
       ? sortedAttempts[0].scorePercent - sortedAttempts[1].scorePercent
-      : sortedAttempts.length === 1
-        ? 4
-        : 0;
+      : null;
 
   const overallMastery =
     subjectProgress.length > 0
@@ -62,25 +60,25 @@ export function DashboardPage() {
       actions={
         <Link to="/exams/new">
           <Button size="sm" leftIcon={<FilePlus2 className="w-4 h-4" />}>
-            Generate New Exam
+            Generate Exam
           </Button>
         </Link>
       }
     >
       <div className="space-y-6">
         {/* Personalized Welcome Banner */}
-        <Card className="bg-white">
+        <Card className="bg-[#151F30] border-[#648BFF]/20">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-xs font-medium text-indigo-900">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#648BFF]">
                 Academic Studio · {user.targetExam}
               </p>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-bold text-[#F1F5FC] tracking-tight">
                 Welcome back, {user.fullName.split(' ')[0]}
               </h2>
-              <p className="text-sm text-slate-600 max-w-2xl">
+              <p className="text-sm text-[#9AA8BD] max-w-2xl">
                 Review your subject mastery trajectory, refine custom exam blueprints, or launch a
-                timed simulation from your library.
+                timed assessment from your library.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3 shrink-0">
@@ -96,47 +94,47 @@ export function DashboardPage() {
           </div>
         </Card>
 
-        {/* 4 KPI Stat Cards */}
+        {/* 4 Summary Stat Cards (derived from real state) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+            <div className="flex items-center justify-between text-xs font-medium text-[#9AA8BD]">
               <span>Total Examinations</span>
-              <BookOpen className="w-4 h-4 text-slate-400" aria-hidden="true" />
+              <BookOpen className="w-4 h-4 text-[#648BFF]" aria-hidden="true" />
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-bold font-mono tabular-nums text-slate-900">
+              <span className="text-2xl font-bold font-mono tabular-nums text-[#F1F5FC]">
                 {totalExams}
               </span>
-              <span className="text-xs text-slate-500">In library</span>
+              <span className="text-xs text-[#9AA8BD]">In library</span>
             </div>
           </Card>
 
           <Card className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+            <div className="flex items-center justify-between text-xs font-medium text-[#9AA8BD]">
               <span>Exams Attempted</span>
-              <ClipboardCheck className="w-4 h-4 text-slate-400" aria-hidden="true" />
+              <ClipboardCheck className="w-4 h-4 text-[#648BFF]" aria-hidden="true" />
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-bold font-mono tabular-nums text-slate-900">
+              <span className="text-2xl font-bold font-mono tabular-nums text-[#F1F5FC]">
                 {totalAttempts}
               </span>
-              <span className="text-xs text-slate-500">Completed runs</span>
+              <span className="text-xs text-[#9AA8BD]">Completed runs</span>
             </div>
           </Card>
 
           <Card className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+            <div className="flex items-center justify-between text-xs font-medium text-[#9AA8BD]">
               <span>Average Score</span>
-              <TrendingUp className="w-4 h-4 text-slate-400" aria-hidden="true" />
+              <TrendingUp className="w-4 h-4 text-[#9275F5]" aria-hidden="true" />
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-bold font-mono tabular-nums text-slate-900">
+              <span className="text-2xl font-bold font-mono tabular-nums text-[#F1F5FC]">
                 {totalAttempts > 0 ? `${averageScore}%` : '—'}
               </span>
-              {totalAttempts > 0 && (
+              {recentTrendDelta !== null && (
                 <span
                   className={`text-xs font-mono tabular-nums font-semibold ${
-                    recentTrendDelta >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                    recentTrendDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'
                   }`}
                 >
                   {recentTrendDelta >= 0 ? `+${recentTrendDelta}%` : `${recentTrendDelta}%`} latest
@@ -146,15 +144,15 @@ export function DashboardPage() {
           </Card>
 
           <Card className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+            <div className="flex items-center justify-between text-xs font-medium text-[#9AA8BD]">
               <span>Study Streak &amp; Mastery</span>
-              <Flame className="w-4 h-4 text-amber-500" aria-hidden="true" />
+              <Flame className="w-4 h-4 text-amber-400" aria-hidden="true" />
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-bold font-mono tabular-nums text-slate-900">
+              <span className="text-2xl font-bold font-mono tabular-nums text-[#F1F5FC]">
                 {user.studyStreakDays}d
               </span>
-              <span className="text-xs font-mono tabular-nums font-semibold text-indigo-900">
+              <span className="text-xs font-mono tabular-nums font-semibold text-[#648BFF]">
                 {overallMastery}% index
               </span>
             </div>
@@ -165,16 +163,16 @@ export function DashboardPage() {
         <Card>
           <div className="flex items-center justify-between gap-4 mb-5">
             <div>
-              <h3 className="text-base font-semibold text-slate-900">
+              <h3 className="text-base font-semibold text-[#F1F5FC]">
                 Subject-Wise Progress
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-[#9AA8BD] mt-0.5">
                 Weighted mastery across recent graded simulations
               </p>
             </div>
             <Link
               to="/analytics"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-900 hover:text-indigo-600 whitespace-nowrap"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-[#648BFF] hover:text-[#9BB6FF] whitespace-nowrap"
             >
               <span>Full Analytics</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
@@ -197,24 +195,24 @@ export function DashboardPage() {
               {subjectProgress.map((item) => (
                 <div key={item.subject} className="space-y-2">
                   <div className="flex items-center justify-between gap-2 text-sm">
-                    <span className="font-medium text-slate-900">{item.subject}</span>
+                    <span className="font-medium text-[#F1F5FC]">{item.subject}</span>
                     <div className="flex items-center gap-2 font-mono tabular-nums text-xs">
-                      <span className="text-slate-500">
+                      <span className="text-[#9AA8BD]">
                         {item.examsCompleted} {item.examsCompleted === 1 ? 'run' : 'runs'}
                       </span>
-                      <span className="font-semibold text-indigo-900">
+                      <span className="font-semibold text-[#648BFF]">
                         {item.masteryPercent}%
                       </span>
                     </div>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div className="h-2 w-full rounded-full bg-[#151F30] overflow-hidden border border-white/[0.05]">
                     <div
-                      className="h-full rounded-full bg-indigo-900 transition-all duration-300"
+                      className="h-full rounded-full bg-gradient-to-r from-[#648BFF] to-[#9275F5] transition-all duration-300"
                       style={{ width: `${Math.max(4, item.masteryPercent)}%` }}
                     />
                   </div>
-                  <p className="text-xs text-slate-500">
-                    Focus area: <span className="text-slate-700">{item.weakestTopic}</span>
+                  <p className="text-xs text-[#9AA8BD]">
+                    Focus area: <span className="text-[#F1F5FC]/85">{item.weakestTopic}</span>
                   </p>
                 </div>
               ))}
@@ -226,13 +224,13 @@ export function DashboardPage() {
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Recent Examinations */}
           <Card padding="none" className="overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-slate-900">
+            <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
+              <h3 className="text-base font-semibold text-[#F1F5FC]">
                 Recent Examinations
               </h3>
               <Link
                 to="/exams"
-                className="text-xs font-semibold text-indigo-900 hover:text-indigo-600"
+                className="text-xs font-semibold text-[#648BFF] hover:text-[#9BB6FF]"
               >
                 View All
               </Link>
@@ -251,17 +249,17 @@ export function DashboardPage() {
                 />
               </div>
             ) : (
-              <div className="divide-y divide-slate-200">
+              <div className="divide-y divide-white/[0.08]">
                 {exams.slice(0, 4).map((exam) => (
                   <div
                     key={exam.id}
-                    className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors"
+                    className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#151F30]/60 transition-colors"
                   >
                     <div className="min-w-0 space-y-1">
-                      <p className="text-sm font-semibold text-slate-900 truncate">
+                      <p className="text-sm font-semibold text-[#F1F5FC] truncate">
                         {exam.title}
                       </p>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-[#9AA8BD]">
                         <span>{exam.subject}</span>
                         <span aria-hidden="true">·</span>
                         <span className="font-mono tabular-nums">
@@ -291,7 +289,7 @@ export function DashboardPage() {
                         leftIcon={<Play className="w-3.5 h-3.5" />}
                         onClick={() => navigate(`/exams/${exam.id}/attempt`)}
                       >
-                        Start Attempt
+                        Start
                       </Button>
                     </div>
                   </div>
@@ -302,11 +300,11 @@ export function DashboardPage() {
 
           {/* Recent Activity */}
           <Card padding="none" className="overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-base font-semibold text-slate-900">Recent Activity</h3>
+            <div className="px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
+              <h3 className="text-base font-semibold text-[#F1F5FC]">Recent Activity</h3>
               <Link
                 to="/history"
-                className="text-xs font-semibold text-indigo-900 hover:text-indigo-600"
+                className="text-xs font-semibold text-[#648BFF] hover:text-[#9BB6FF]"
               >
                 Full History
               </Link>
@@ -320,17 +318,17 @@ export function DashboardPage() {
                 />
               </div>
             ) : (
-              <div className="divide-y divide-slate-200">
+              <div className="divide-y divide-white/[0.08]">
                 {sortedAttempts.slice(0, 4).map((attempt) => (
                   <div
                     key={attempt.id}
-                    className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors"
+                    className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#151F30]/60 transition-colors"
                   >
                     <div className="min-w-0 space-y-1">
-                      <p className="text-sm font-semibold text-slate-900 truncate">
+                      <p className="text-sm font-semibold text-[#F1F5FC] truncate">
                         {attempt.examTitle}
                       </p>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-[#9AA8BD]">
                         <span>{formatShortDate(attempt.completedAt)}</span>
                         <span aria-hidden="true">·</span>
                         <span className="font-mono tabular-nums">
@@ -355,7 +353,7 @@ export function DashboardPage() {
                         variant="secondary"
                         onClick={() => navigate(`/results/${attempt.id}`)}
                       >
-                        View Results
+                        Results
                       </Button>
                     </div>
                   </div>

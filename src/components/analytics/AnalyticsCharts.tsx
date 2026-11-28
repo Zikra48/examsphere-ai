@@ -15,7 +15,7 @@ export function ScoreTrajectoryChart({ attempts }: ScoreTrajectoryChartProps) {
 
   if (sorted.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center text-sm text-slate-500">
+      <div className="h-64 flex items-center justify-center text-sm text-[#9AA8BD]">
         Complete at least one exam attempt to visualize score trajectory.
       </div>
     );
@@ -52,13 +52,13 @@ export function ScoreTrajectoryChart({ attempts }: ScoreTrajectoryChartProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2">
-        <span className="font-medium text-slate-900 truncate max-w-md">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#9AA8BD] bg-[#151F30] border border-white/[0.08] rounded-lg px-3.5 py-2">
+        <span className="font-medium text-[#F1F5FC] truncate max-w-md">
           {activePoint.attempt.examTitle}
         </span>
         <div className="flex items-center gap-3 font-mono tabular-nums shrink-0">
           <span>{formatShortDate(activePoint.attempt.completedAt)}</span>
-          <span className="font-semibold text-indigo-900">
+          <span className="font-semibold text-[#648BFF]">
             {activePoint.attempt.scorePercent}% ({activePoint.attempt.earnedMarks}/
             {activePoint.attempt.totalMarks})
           </span>
@@ -74,8 +74,8 @@ export function ScoreTrajectoryChart({ attempts }: ScoreTrajectoryChartProps) {
         >
           <defs>
             <linearGradient id="scoreAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#312E81" stopOpacity="0.14" />
-              <stop offset="100%" stopColor="#312E81" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="#648BFF" stopOpacity="0.24" />
+              <stop offset="100%" stopColor="#648BFF" stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
@@ -88,7 +88,7 @@ export function ScoreTrajectoryChart({ attempts }: ScoreTrajectoryChartProps) {
                   y1={y}
                   x2={width - padRight}
                   y2={y}
-                  stroke={tick === 70 ? '#CBD5E1' : '#E2E8F0'}
+                  stroke={tick === 0 ? 'rgba(148,163,184,0.22)' : 'rgba(148,163,184,0.1)'}
                   strokeDasharray={tick === 0 ? undefined : '4 4'}
                   strokeWidth="1"
                 />
@@ -96,7 +96,7 @@ export function ScoreTrajectoryChart({ attempts }: ScoreTrajectoryChartProps) {
                   x={padLeft - 8}
                   y={y + 4}
                   textAnchor="end"
-                  className="fill-slate-400 text-[10px] font-mono tabular-nums"
+                  className="fill-[#9AA8BD] text-[10px] font-mono tabular-nums"
                 >
                   {tick}%
                 </text>
@@ -110,7 +110,7 @@ export function ScoreTrajectoryChart({ attempts }: ScoreTrajectoryChartProps) {
             <path
               d={linePath}
               fill="none"
-              stroke="#312E81"
+              stroke="#648BFF"
               strokeWidth="2.25"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -134,7 +134,7 @@ export function ScoreTrajectoryChart({ attempts }: ScoreTrajectoryChartProps) {
                     y1={padTop}
                     x2={pt.x}
                     y2={padTop + plotH}
-                    stroke="#C7D2FE"
+                    stroke="rgba(100,139,255,0.4)"
                     strokeWidth="1"
                     strokeDasharray="3 3"
                   />
@@ -143,15 +143,15 @@ export function ScoreTrajectoryChart({ attempts }: ScoreTrajectoryChartProps) {
                   cx={pt.x}
                   cy={pt.y}
                   r={isActive ? 6 : 4}
-                  fill={isActive ? '#4F46E5' : '#FFFFFF'}
-                  stroke="#312E81"
+                  fill={isActive ? '#9275F5' : '#101827'}
+                  stroke="#648BFF"
                   strokeWidth="2"
                 />
                 <text
                   x={pt.x}
                   y={height - 10}
                   textAnchor="middle"
-                  className="fill-slate-500 text-[10px] font-mono tabular-nums"
+                  className="fill-[#9AA8BD] text-[10px] font-mono tabular-nums"
                 >
                   #{idx + 1}
                 </text>
@@ -171,7 +171,7 @@ interface SubjectMasteryChartProps {
 export function SubjectMasteryChart({ subjects }: SubjectMasteryChartProps) {
   if (subjects.length === 0) {
     return (
-      <div className="h-48 flex items-center justify-center text-sm text-slate-500">
+      <div className="h-48 flex items-center justify-center text-sm text-[#9AA8BD]">
         No subject mastery records available yet.
       </div>
     );
@@ -183,21 +183,21 @@ export function SubjectMasteryChart({ subjects }: SubjectMasteryChartProps) {
         <div key={sub.subject} className="space-y-1.5">
           <div className="flex items-center justify-between gap-3 text-sm">
             <div className="min-w-0">
-              <span className="font-medium text-slate-900">{sub.subject}</span>
-              <span className="ml-2 text-xs text-slate-500">
+              <span className="font-medium text-[#F1F5FC]">{sub.subject}</span>
+              <span className="ml-2 text-xs text-[#9AA8BD]">
                 {sub.examsCompleted} {sub.examsCompleted === 1 ? 'attempt' : 'attempts'}
               </span>
             </div>
             <div className="flex items-center gap-3 font-mono tabular-nums text-xs shrink-0">
-              <span className="text-slate-500">Avg {sub.averageScore}%</span>
-              <span className="font-semibold text-indigo-900">
+              <span className="text-[#9AA8BD]">Avg {sub.averageScore}%</span>
+              <span className="font-semibold text-[#648BFF]">
                 Mastery {sub.masteryPercent}%
               </span>
             </div>
           </div>
-          <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+          <div className="h-2 w-full rounded-full bg-[#151F30] overflow-hidden border border-white/[0.05]">
             <div
-              className="h-full rounded-full bg-indigo-900 transition-all duration-300"
+              className="h-full rounded-full bg-gradient-to-r from-[#648BFF] to-[#9275F5] transition-all duration-300"
               style={{ width: `${Math.max(4, sub.masteryPercent)}%` }}
             />
           </div>
@@ -223,10 +223,10 @@ export function DifficultyAccuracyChart({ attempts }: DifficultyAccuracyChartPro
   });
 
   const barColor: Record<DifficultyLevel, string> = {
-    Easy: 'bg-emerald-600',
-    Medium: 'bg-amber-500',
-    Hard: 'bg-rose-600',
-    Mixed: 'bg-indigo-700',
+    Easy: 'bg-emerald-500',
+    Medium: 'bg-amber-400',
+    Hard: 'bg-rose-500',
+    Mixed: 'bg-[#648BFF]',
   };
 
   return (
@@ -234,17 +234,17 @@ export function DifficultyAccuracyChart({ attempts }: DifficultyAccuracyChartPro
       {stats.map((item) => (
         <div
           key={item.level}
-          className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col justify-between"
+          className="p-4 rounded-xl border border-white/[0.08] bg-[#151F30] flex flex-col justify-between"
         >
           <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-slate-800">{item.level}</span>
-            <span className="font-mono tabular-nums text-slate-500">
+            <span className="font-semibold text-[#F1F5FC]">{item.level}</span>
+            <span className="font-mono tabular-nums text-[#9AA8BD]">
               {item.count}x
             </span>
           </div>
 
           <div className="my-4 h-28 flex items-end">
-            <div className="w-full h-full bg-slate-200/70 rounded-lg flex items-end overflow-hidden p-1">
+            <div className="w-full h-full bg-[#080D19]/80 border border-white/[0.06] rounded-lg flex items-end overflow-hidden p-1">
               <div
                 className={`w-full rounded-md transition-all duration-300 ${barColor[item.level]}`}
                 style={{ height: `${item.count > 0 ? Math.max(10, item.avg) : 4}%` }}
@@ -253,8 +253,8 @@ export function DifficultyAccuracyChart({ attempts }: DifficultyAccuracyChartPro
           </div>
 
           <div className="flex items-baseline justify-between">
-            <span className="text-xs text-slate-500">Accuracy</span>
-            <span className="text-base font-bold font-mono tabular-nums text-slate-900">
+            <span className="text-xs text-[#9AA8BD]">Accuracy</span>
+            <span className="text-base font-bold font-mono tabular-nums text-[#F1F5FC]">
               {item.count > 0 ? `${item.avg}%` : '—'}
             </span>
           </div>

@@ -57,7 +57,7 @@ export function AnalyticsPage() {
   return (
     <AppShell
       title="Analytics & Progress"
-      breadcrumb="Workspace / Mastery Telemetry"
+      breadcrumb="Overview / Mastery Telemetry"
       actions={
         <Link to="/exams/new">
           <Button size="sm" leftIcon={<FilePlus2 className="w-4 h-4" />}>
@@ -83,10 +83,10 @@ export function AnalyticsPage() {
           <div className="grid lg:grid-cols-12 gap-6">
             <Card className="lg:col-span-7 space-y-4">
               <div>
-                <h2 className="text-base font-semibold text-slate-900">
+                <h2 className="text-base font-semibold text-[#F1F5FC]">
                   Score Trajectory Over Time
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-[#9AA8BD] mt-0.5">
                   Hover or select any attempt node to inspect date and score ratio
                 </p>
               </div>
@@ -95,10 +95,10 @@ export function AnalyticsPage() {
 
             <Card className="lg:col-span-5 space-y-4">
               <div>
-                <h2 className="text-base font-semibold text-slate-900">
+                <h2 className="text-base font-semibold text-[#F1F5FC]">
                   Subject Mastery Breakdown
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-[#9AA8BD] mt-0.5">
                   Weighted index combining historical average and latest performance
                 </p>
               </div>
@@ -110,32 +110,32 @@ export function AnalyticsPage() {
           <div className="grid lg:grid-cols-12 gap-6">
             <Card className="lg:col-span-7 space-y-4">
               <div>
-                <h2 className="text-base font-semibold text-slate-900">
+                <h2 className="text-base font-semibold text-[#F1F5FC]">
                   Difficulty Accuracy Comparison
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-[#9AA8BD] mt-0.5">
                   Average accuracy segmented by calibrated exam difficulty tier
                 </p>
               </div>
               <DifficultyAccuracyChart attempts={attempts} />
             </Card>
 
-            <Card className="lg:col-span-5 bg-violet-50/70 border-violet-200 space-y-4">
+            <Card className="lg:col-span-5 bg-[#151F30] border-[#9275F5]/25 space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-700">
-                    <Sparkles className="w-3.5 h-3.5" />
+                  <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#C1B0FF]">
+                    <Sparkles className="w-3.5 h-3.5 text-[#9275F5]" />
                     <span>AI Study Focus Recommendations</span>
                   </p>
-                  <h2 className="mt-1 text-base font-semibold text-slate-900">
+                  <h2 className="mt-1 text-base font-semibold text-[#F1F5FC]">
                     Highest-Leverage Review Topics
                   </h2>
                 </div>
-                <Target className="w-5 h-5 text-violet-600 shrink-0" aria-hidden="true" />
+                <Target className="w-5 h-5 text-[#9275F5] shrink-0" aria-hidden="true" />
               </div>
 
               {weakTopicRecommendations.length === 0 ? (
-                <p className="text-sm text-slate-700 leading-relaxed">
+                <p className="text-sm text-[#9AA8BD] leading-relaxed">
                   All tested topics are currently above 85% accuracy. Consider generating a Hard or
                   Mixed exam to challenge upper-bound synthesis.
                 </p>
@@ -144,19 +144,19 @@ export function AnalyticsPage() {
                   {weakTopicRecommendations.map((rec) => (
                     <div
                       key={`${rec.subject}-${rec.topic}`}
-                      className="p-3.5 rounded-xl bg-white border border-violet-200/80 flex items-center justify-between gap-3"
+                      className="p-3.5 rounded-xl bg-[#101827] border border-white/[0.08] flex items-center justify-between gap-3"
                     >
                       <div className="min-w-0">
-                        <p className="text-xs font-medium text-violet-700">{rec.subject}</p>
-                        <p className="text-sm font-semibold text-slate-900 truncate">
+                        <p className="text-xs font-medium text-[#C1B0FF]">{rec.subject}</p>
+                        <p className="text-sm font-semibold text-[#F1F5FC] truncate">
                           {rec.topic}
                         </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-xs text-[#9AA8BD] mt-0.5">
                           Missed {rec.missed} of {rec.total} tested{' '}
                           {rec.total === 1 ? 'item' : 'items'}
                         </p>
                       </div>
-                      <span className="font-mono tabular-nums text-sm font-bold text-rose-600 shrink-0">
+                      <span className="font-mono tabular-nums text-sm font-bold text-rose-400 shrink-0">
                         {rec.accuracy}%
                       </span>
                     </div>

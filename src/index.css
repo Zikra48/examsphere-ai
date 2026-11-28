@@ -3,17 +3,61 @@
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --color-canvas: #080D19;
+  --color-surface-secondary: #101827;
+  --color-surface-elevated: #151F30;
+  --color-accent-primary: #648BFF;
+  --color-accent-secondary: #9275F5;
+  --color-text-primary: #F1F5FC;
+  --color-text-secondary: #9AA8BD;
+  --color-border-subtle: rgba(148, 163, 184, 0.14);
 }
 
 @layer base {
   html {
     font-family: var(--font-sans);
     scroll-behavior: smooth;
+    color-scheme: dark;
   }
 
   body {
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: #080D19;
+    color: #F1F5FC;
+  }
+
+  input,
+  textarea,
+  select {
+    color-scheme: dark;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: #F1F5FC;
+    -webkit-box-shadow: 0 0 0px 1000px #101827 inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #080D19;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #22304A;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #33476A;
   }
 
   @media (prefers-reduced-motion: reduce) {

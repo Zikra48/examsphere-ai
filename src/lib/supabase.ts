@@ -11,26 +11,39 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
  *   Row Level Security (RLS) policies are approved and deployed.
  */
 
-const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
-const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+function normalizeEnvValue(raw: string | undefined): string {
+  const trimmed = (raw || '').trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'") && trimmed.length >= 2)
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
+const supabaseUrl = normalizeEnvValue(import.meta.env.VITE_SUPABASE_URL).replace(/\/+$/, '');
+const supabaseAnonKey = normalizeEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 let browserClient: SupabaseClient | null = null;
 let hasLoggedConfigError = false;
 
+function decodeJwtPayload(key: string): Record<string, unknown> | null {
+  const parts = key.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const json = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(json) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 function isForbiddenSecretKey(key: string): boolean {
   if (!key) return false;
   if (key.startsWith('sb_secret_')) return true;
-  const parts = key.split('.');
-  if (parts.length === 3) {
-    try {
-      const json = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
-      const payload = JSON.parse(json) as { role?: string };
-      return payload.role === 'service_role';
-    } catch {
-      return false;
-    }
-  }
-  return false;
+  const payload = decodeJwtPayload(key);
+  return payload?.role === 'service_role';
 }
 
 function parseHttpUrl(value: string): URL | null {
@@ -43,21 +56,47 @@ function parseHttpUrl(value: string): URL | null {
   }
 }
 
+function getKeyFormatLabel(key: string): string {
+  if (!key) return 'missing';
+  if (key.startsWith('sb_publishable_')) return 'publishable (sb_publishable_)';
+  if (key.startsWith('sb_secret_')) return 'secret (blocked)';
+  const payload = decodeJwtPayload(key);
+  if (payload) {
+    return typeof payload.role === 'string' ? `jwt (role: ${payload.role})` : 'jwt';
+  }
+  return 'unrecognized format';
+}
+
+function getJwtProjectRefMismatch(url: URL | null, key: string): string | null {
+  if (!url || !key) return null;
+  const payload = decodeJwtPayload(key);
+  const jwtRef = typeof payload?.ref === 'string' ? payload.ref : null;
+  if (!jwtRef) return null;
+  const urlHostRef = url.hostname.split('.')[0];
+  if (urlHostRef && jwtRef !== urlHostRef) {
+    return `Supabase project mismatch: VITE_SUPABASE_URL points to "${urlHostRef}", but VITE_SUPABASE_ANON_KEY belongs to "${jwtRef}".`;
+  }
+  return null;
+}
+
 export function getSupabaseBrowserConfigError(): string | null {
   const missing: string[] = [];
   if (!supabaseUrl) missing.push('VITE_SUPABASE_URL');
   if (!supabaseAnonKey) missing.push('VITE_SUPABASE_ANON_KEY');
 
+  const parsedUrl = parseHttpUrl(supabaseUrl);
   let errorMsg: string | null = null;
 
   if (missing.length > 0) {
     errorMsg = `Supabase is not configured: missing ${missing.join(' / ')}`;
-  } else if (!parseHttpUrl(supabaseUrl)) {
+  } else if (!parsedUrl) {
     errorMsg =
       'Supabase URL configuration is invalid: VITE_SUPABASE_URL must be a valid https:// project URL.';
   } else if (isForbiddenSecretKey(supabaseAnonKey)) {
     errorMsg =
       'Unsafe Supabase key detected in browser configuration. Only the public publishable/anon key is permitted.';
+  } else {
+    errorMsg = getJwtProjectRefMismatch(parsedUrl, supabaseAnonKey);
   }
 
   if (errorMsg && !hasLoggedConfigError) {
@@ -65,6 +104,7 @@ export function getSupabaseBrowserConfigError(): string | null {
     console.error(`[ExamSphere Supabase] ${errorMsg}`, {
       hasViteSupabaseUrl: Boolean(supabaseUrl),
       hasViteSupabaseAnonKey: Boolean(supabaseAnonKey),
+      keyFormat: getKeyFormatLabel(supabaseAnonKey),
     });
   }
 
@@ -79,6 +119,7 @@ export interface SupabaseEnvDiagnostics {
   hasViteSupabaseUrl: boolean;
   hasViteSupabaseAnonKey: boolean;
   supabaseUrlHost: string | null;
+  keyFormat: string;
   configError: string | null;
 }
 
@@ -88,8 +129,38 @@ export function getSupabaseEnvDiagnostics(): SupabaseEnvDiagnostics {
     hasViteSupabaseUrl: Boolean(supabaseUrl),
     hasViteSupabaseAnonKey: Boolean(supabaseAnonKey),
     supabaseUrlHost: parsed ? parsed.host : null,
+    keyFormat: getKeyFormatLabel(supabaseAnonKey),
     configError: getSupabaseBrowserConfigError(),
   };
+}
+
+export async function verifySupabaseGatewayKey(): Promise<string> {
+  const configError = getSupabaseBrowserConfigError();
+  if (configError) {
+    return `Skipped (${configError})`;
+  }
+  const parsed = parseHttpUrl(supabaseUrl);
+  if (!parsed) {
+    return 'Invalid URL';
+  }
+  try {
+    const headers: Record<string, string> = { apikey: supabaseAnonKey };
+    if (supabaseAnonKey.split('.').length === 3) {
+      headers.Authorization = `Bearer ${supabaseAnonKey}`;
+    }
+    const res = await fetch(`${parsed.origin}/auth/v1/settings`, {
+      method: 'GET',
+      headers,
+    });
+    if (res.ok) {
+      return `Accepted by ${parsed.host} (HTTP ${res.status})`;
+    }
+    const body = (await res.json().catch(() => null)) as { msg?: string; message?: string } | null;
+    const detail = body?.msg || body?.message || res.statusText;
+    return `Rejected by ${parsed.host} (HTTP ${res.status}: ${detail})`;
+  } catch (err) {
+    return err instanceof Error ? `Network error: ${err.message}` : 'Network error';
+  }
 }
 
 export function getSupabaseBrowserClient(): SupabaseClient | null {

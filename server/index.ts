@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { env } from './config/env.js';
 import { centralErrorHandler, notFoundApiHandler } from './middleware/errorHandler.js';
+import { examsRouter } from './routes/exams.js';
 import { healthRouter } from './routes/health.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,10 +26,11 @@ export function createApp() {
     next();
   });
 
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.json({ limit: '10mb' }));
 
   // API Routes
   app.use('/api/health', healthRouter);
+  app.use('/api/exams', examsRouter);
 
   // Unmatched API endpoints return structured JSON 404
   app.use('/api', notFoundApiHandler);

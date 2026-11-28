@@ -27,4 +27,9 @@ export const env = {
   appUrl: process.env.APP_URL || '',
   supabaseUrl: (process.env.SUPABASE_URL || '').trim(),
   supabaseAnonKey: (process.env.SUPABASE_ANON_KEY || '').trim(),
+  geminiApiKey: (process.env.GEMINI_API_KEY || '').trim(),
 };
+
+export function isGeminiConfigured(): boolean {
+  return Boolean(env.geminiApiKey && env.geminiApiKey !== 'MY_GEMINI_API_KEY');
+}

@@ -34,6 +34,7 @@ export interface Exam {
   durationMinutes: number;
   totalMarks: number;
   questionCount: number;
+  instructions?: string;
   sourceType: SourceMode;
   sourceSummary: string;
   createdAt: string;
@@ -96,6 +97,7 @@ export interface SubjectProgress {
 }
 
 export interface ExamGenerationInput {
+  title?: string;
   subject: string;
   topic: string;
   academicLevel: AcademicLevel;
@@ -104,11 +106,15 @@ export interface ExamGenerationInput {
   questionTypes: QuestionType[];
   totalMarks: number;
   durationMinutes: number;
+  instructions?: string;
   sourceMode: SourceMode;
   sourcePrompt: string;
   sourceNotes: string;
   uploadedFileName?: string;
   uploadedFileSizeBytes?: number;
+  uploadedFileContent?: string;
+  uploadedFileBase64?: string;
+  uploadedFileMimeType?: string;
 }
 
 export interface ToastMessage {

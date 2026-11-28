@@ -10,12 +10,12 @@ export interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  slate: 'bg-slate-100 text-slate-700 border-slate-200',
-  indigo: 'bg-indigo-50 text-indigo-900 border-indigo-200',
-  violet: 'bg-violet-50 text-violet-700 border-violet-200',
-  emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  amber: 'bg-amber-50 text-amber-700 border-amber-200',
-  rose: 'bg-rose-50 text-rose-700 border-rose-200',
+  slate: 'bg-[#151F30] text-[#9AA8BD] border-white/[0.1]',
+  indigo: 'bg-[#648BFF]/15 text-[#9BB6FF] border-[#648BFF]/30',
+  violet: 'bg-[#9275F5]/15 text-[#C1B0FF] border-[#9275F5]/30',
+  emerald: 'bg-emerald-500/12 text-emerald-300 border-emerald-500/25',
+  amber: 'bg-amber-500/12 text-amber-300 border-amber-500/25',
+  rose: 'bg-rose-500/12 text-rose-300 border-rose-500/25',
 };
 
 export function Badge({ variant = 'slate', icon, children, className = '' }: BadgeProps) {

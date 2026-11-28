@@ -213,8 +213,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         exams: [generated, ...prev.exams],
       }));
       addToast({
-        title: 'Exam Blueprint Drafted',
-        description: 'Simulated local generator created your questions. Server-side Gemini API connects in a later step.',
+        title: 'AI Exam Generated',
+        description: `Created ${generated.questionCount} calibrated questions for ${generated.subject}.`,
         variant: 'success',
       });
       return generated;

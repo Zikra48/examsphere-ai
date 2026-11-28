@@ -125,17 +125,17 @@ export function LoginPage() {
   const activeError = error || configError;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4 sm:px-6">
+    <div className="min-h-screen bg-[#080D19] flex flex-col justify-center py-12 px-4 sm:px-6">
       <div className="sm:mx-auto sm:w-full sm:max-w-md mb-6 flex items-center justify-between">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[#9AA8BD] hover:text-[#F1F5FC]"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Home</span>
         </Link>
-        <Link to="/" className="inline-flex items-center gap-2 font-bold text-slate-900">
-          <span className="w-7 h-7 rounded-lg bg-indigo-900 text-white flex items-center justify-center">
+        <Link to="/" className="inline-flex items-center gap-2 font-bold text-[#F1F5FC]">
+          <span className="w-7 h-7 rounded-lg bg-[#648BFF] text-[#080D19] flex items-center justify-center">
             <Compass className="w-4 h-4" />
           </span>
           <span>ExamSphere AI</span>
@@ -145,10 +145,10 @@ export function LoginPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Card padding="lg">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-bold text-[#F1F5FC] tracking-tight">
               Sign in to ExamSphere AI
             </h1>
-            <p className="mt-1.5 text-sm text-slate-500">
+            <p className="mt-1.5 text-sm text-[#9AA8BD]">
               Access your calibrated exam library, timed focus mode, and progress analytics.
             </p>
           </div>
@@ -158,24 +158,24 @@ export function LoginPage() {
             className="w-full mb-5"
             isLoading={demoLoading}
             onClick={handleDemoLogin}
-            leftIcon={<UserCheck className="w-4 h-4 text-indigo-900" />}
+            leftIcon={<UserCheck className="w-4 h-4 text-[#648BFF]" />}
           >
             Continue with Demo Student Account
           </Button>
 
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center" aria-hidden="true">
-              <div className="w-full border-t border-slate-200" />
+              <div className="w-full border-t border-white/[0.08]" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-3 text-slate-400">or sign in with email</span>
+              <span className="bg-[#101827] px-3 text-[#9AA8BD]">or sign in with email</span>
             </div>
           </div>
 
           {activeError && (
             <div
               role="alert"
-              className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-medium text-rose-700 space-y-2"
+              className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-xs font-medium text-rose-300 space-y-2"
             >
               <p>{activeError}</p>
               {canResendConfirmation && (
@@ -196,7 +196,7 @@ export function LoginPage() {
           {resendSuccess && (
             <div
               role="status"
-              className="mb-4 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-700"
+              className="mb-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-xs font-medium text-emerald-300"
             >
               {resendSuccess}
             </div>
@@ -204,7 +204,7 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="login-email" className="block text-sm font-medium text-slate-700 mb-1.5">
+              <label htmlFor="login-email" className="block text-sm font-medium text-[#F1F5FC] mb-1.5">
                 Email address
               </label>
               <input
@@ -214,18 +214,18 @@ export function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="elena.rostova@university.edu"
-                className="w-full h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
+                className="w-full h-10 px-3.5 rounded-lg border border-white/[0.1] bg-[#080D19] text-sm text-[#F1F5FC] placeholder:text-[#9AA8BD]/60 focus:outline-none focus:ring-2 focus:ring-[#648BFF] focus:border-transparent"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label htmlFor="login-password" className="block text-sm font-medium text-slate-700">
+                <label htmlFor="login-password" className="block text-sm font-medium text-[#F1F5FC]">
                   Password
                 </label>
                 <Link
                   to="/forgot-password"
-                  className="text-xs font-medium text-indigo-900 hover:text-indigo-600"
+                  className="text-xs font-medium text-[#648BFF] hover:text-[#9BB6FF]"
                 >
                   Forgot password?
                 </Link>
@@ -237,16 +237,16 @@ export function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
+                className="w-full h-10 px-3.5 rounded-lg border border-white/[0.1] bg-[#080D19] text-sm text-[#F1F5FC] placeholder:text-[#9AA8BD]/60 focus:outline-none focus:ring-2 focus:ring-[#648BFF] focus:border-transparent"
               />
             </div>
 
-            <label className="flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer select-none">
+            <label className="flex items-center gap-2.5 text-sm text-[#9AA8BD] cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-indigo-900 focus:ring-indigo-600"
+                className="w-4 h-4 rounded border-white/20 bg-[#080D19] accent-[#648BFF]"
               />
               <span>Remember me on this browser</span>
             </label>
@@ -256,19 +256,19 @@ export function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-6 pt-5 border-t border-slate-200 text-center text-sm text-slate-600">
+          <p className="mt-6 pt-5 border-t border-white/[0.08] text-center text-sm text-[#9AA8BD]">
             New to ExamSphere AI?{' '}
-            <Link to="/register" className="font-semibold text-indigo-900 hover:text-indigo-600">
+            <Link to="/register" className="font-semibold text-[#648BFF] hover:text-[#9BB6FF]">
               Create an account
             </Link>
           </p>
 
-          <div className="mt-4 pt-3 border-t border-slate-100">
+          <div className="mt-4 pt-3 border-t border-white/[0.06]">
             <button
               type="button"
               onClick={() => setDebugOpen((prev) => !prev)}
               aria-expanded={debugOpen}
-              className="w-full flex items-center justify-between text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+              className="w-full flex items-center justify-between text-xs text-[#9AA8BD] hover:text-[#F1F5FC] cursor-pointer"
             >
               <span>Connection status</span>
               <ChevronDown
@@ -277,14 +277,14 @@ export function LoginPage() {
             </button>
 
             {debugOpen && (
-              <div className="mt-2.5 p-3 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-mono text-slate-600 space-y-1">
-                <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-200">
-                  <span className="font-semibold text-slate-700">Auth Diagnostics</span>
+              <div className="mt-2.5 p-3 rounded-lg bg-[#080D19] border border-white/[0.08] text-[11px] font-mono text-[#9AA8BD] space-y-1">
+                <div className="flex items-center justify-between gap-2 pb-1 border-b border-white/[0.08]">
+                  <span className="font-semibold text-[#F1F5FC]">Auth Diagnostics</span>
                   <button
                     type="button"
                     onClick={() => void runDiagnostics()}
                     disabled={checkingDiagnostics}
-                    className="inline-flex items-center gap-1 text-indigo-900 hover:text-indigo-600 cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1 text-[#648BFF] hover:text-[#9BB6FF] cursor-pointer disabled:opacity-50"
                   >
                     <RefreshCw className={`w-3 h-3 ${checkingDiagnostics ? 'animate-spin' : ''}`} />
                     <span>Recheck</span>
@@ -292,25 +292,37 @@ export function LoginPage() {
                 </div>
                 <p>
                   VITE_SUPABASE_URL:{' '}
-                  <span className="font-semibold text-slate-800">
+                  <span className="font-semibold text-[#F1F5FC]">
                     {String(Boolean(diagnostics?.hasViteSupabaseUrl))}
                   </span>
                 </p>
                 <p>
                   VITE_SUPABASE_ANON_KEY:{' '}
-                  <span className="font-semibold text-slate-800">
+                  <span className="font-semibold text-[#F1F5FC]">
                     {String(Boolean(diagnostics?.hasViteSupabaseAnonKey))}
                   </span>
                 </p>
                 <p>
                   Supabase host:{' '}
-                  <span className="font-semibold text-slate-800">
+                  <span className="font-semibold text-[#F1F5FC]">
                     {diagnostics?.supabaseUrlHost ?? 'not configured'}
                   </span>
                 </p>
                 <p>
+                  Key format:{' '}
+                  <span className="font-semibold text-[#F1F5FC]">
+                    {diagnostics?.keyFormat ?? 'checking...'}
+                  </span>
+                </p>
+                <p>
+                  Gateway key check:{' '}
+                  <span className="font-semibold text-[#F1F5FC]">
+                    {diagnostics?.gatewayKeyStatus ?? 'checking...'}
+                  </span>
+                </p>
+                <p>
                   getSession():{' '}
-                  <span className="font-semibold text-slate-800">
+                  <span className="font-semibold text-[#F1F5FC]">
                     {diagnostics?.sessionStatus ?? 'checking...'}
                   </span>
                 </p>

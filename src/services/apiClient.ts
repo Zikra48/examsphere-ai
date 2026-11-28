@@ -10,6 +10,7 @@ import {
   getSupabaseEnvDiagnostics,
   requireSupabaseBrowserClient,
   SupabaseEnvDiagnostics,
+  verifySupabaseGatewayKey,
 } from '../lib/supabase';
 import {
   AcademicLevel,
@@ -18,7 +19,6 @@ import {
   DifficultyLevel,
   Exam,
   ExamGenerationInput,
-  Question,
   SubjectProgress,
   TopicBreakdownItem,
   UserProfile,
@@ -83,6 +83,7 @@ export class AuthFlowError extends Error {
 
 export interface AuthConnectionDiagnostics extends SupabaseEnvDiagnostics {
   sessionStatus: string;
+  gatewayKeyStatus: string;
 }
 
 function toAuthFlowError(
@@ -93,6 +94,15 @@ function toAuthFlowError(
 
   const raw = (error.message || 'Authentication request failed.').trim();
   const lower = raw.toLowerCase();
+
+  if (lower.includes('invalid api key')) {
+    const diag = getSupabaseEnvDiagnostics();
+    return new AuthFlowError(
+      `Invalid API key (${raw}): Verify that VITE_SUPABASE_ANON_KEY belongs to "${diag.supabaseUrlHost ?? 'your Supabase project'}", has no surrounding quotes or extra spaces, and that you redeployed after saving environment variables.`,
+      'config_error',
+      raw
+    );
+  }
 
   if (lower.includes('email not confirmed')) {
     return new AuthFlowError(
@@ -280,41 +290,6 @@ export function computeSubjectProgress(exams: Exam[], attempts: Attempt[]): Subj
   return results.sort((a, b) => b.masteryPercent - a.masteryPercent);
 }
 
-function distributeMarks(totalMarks: number, count: number): number[] {
-  const base = Math.floor(totalMarks / count);
-  const remainder = totalMarks % count;
-  return Array.from({ length: count }, (_, idx) => (idx < remainder ? base + 1 : base));
-}
-
-function resolveQuestionDifficulty(
-  target: DifficultyLevel,
-  index: number
-): Exclude<DifficultyLevel, 'Mixed'> {
-  if (target !== 'Mixed') return target;
-  const cycle: Exclude<DifficultyLevel, 'Mixed'>[] = ['Easy', 'Medium', 'Hard'];
-  return cycle[index % cycle.length];
-}
-
-function extractNoteKeyPhrases(notes: string): string[] {
-  if (!notes.trim()) return [];
-  const sentences = notes
-    .split(/[\n.!?]+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length >= 18 && s.length <= 160);
-  return sentences.slice(0, 12);
-}
-
-const CONCEPT_STEMS = [
-  'Foundational Principle',
-  'Analytical Application',
-  'Boundary Condition',
-  'Comparative Evaluation',
-  'Diagnostic Error Check',
-  'Quantitative Formulation',
-  'Mechanism & Causality',
-  'Synthesis Scenario',
-];
-
 export const apiClient = {
   async checkAuthConnectionStatus(): Promise<AuthConnectionDiagnostics> {
     const envDiagnostics = getSupabaseEnvDiagnostics();
@@ -324,10 +299,13 @@ export const apiClient = {
       const result: AuthConnectionDiagnostics = {
         ...envDiagnostics,
         sessionStatus: envDiagnostics.configError || 'Client unavailable',
+        gatewayKeyStatus: 'Skipped (client not configured)',
       };
       console.info('[ExamSphere Auth Diagnostics]', result);
       return result;
     }
+
+    const gatewayKeyStatus = await verifySupabaseGatewayKey();
 
     try {
       const { data, error } = await supabase.auth.getSession();
@@ -339,6 +317,7 @@ export const apiClient = {
       const result: AuthConnectionDiagnostics = {
         ...envDiagnostics,
         sessionStatus,
+        gatewayKeyStatus,
       };
       console.info('[ExamSphere Auth Diagnostics]', result);
       return result;
@@ -346,6 +325,7 @@ export const apiClient = {
       const result: AuthConnectionDiagnostics = {
         ...envDiagnostics,
         sessionStatus: err instanceof Error ? `Exception: ${err.message}` : 'getSession threw',
+        gatewayKeyStatus,
       };
       console.info('[ExamSphere Auth Diagnostics]', result);
       return result;
@@ -507,119 +487,57 @@ export const apiClient = {
     input: ExamGenerationInput,
     onStageChange?: (stageLabel: string) => void
   ): Promise<Exam> {
-    // TODO: Replace with `POST /api/exams/generate` backed by server-side `@google/genai`
-    // and multipart document ingestion on Cloud Run, then persist to Supabase `exams` + `questions`.
-    onStageChange?.('Analyzing source material...');
-    await sleep(750);
+    onStageChange?.('Analyzing material and calibrating rubric...');
 
-    onStageChange?.('Calibrating difficulty...');
-    await sleep(750);
-
-    onStageChange?.('Drafting explanations...');
-    await sleep(700);
-
-    const examId = `exam_${Date.now()}`;
-    const marksArray = distributeMarks(Math.max(input.questionCount, input.totalMarks), input.questionCount);
-    const notePhrases = extractNoteKeyPhrases(input.sourceNotes);
-    const allowMcq = input.questionTypes.includes('multiple_choice');
-    const allowTf = input.questionTypes.includes('true_false');
-
-    const questions: Question[] = Array.from({ length: input.questionCount }, (_, index) => {
-      const qNum = index + 1;
-      const isTf = allowTf && (!allowMcq || index % 4 === 2);
-      const qDifficulty = resolveQuestionDifficulty(input.difficulty, index);
-      const topicTag = `${input.topic.split(',')[0].trim() || input.subject} — ${CONCEPT_STEMS[index % CONCEPT_STEMS.length]}`;
-      const noteSnippet = notePhrases[index % notePhrases.length];
-
-      if (isTf) {
-        const statementTrue = index % 2 === 0;
-        const prompt = noteSnippet
-          ? `True or False: Based on your ${input.subject} material ("${noteSnippet}"), this principle holds unconditionally under standard ${input.academicLevel.toLowerCase()} assumptions.`
-          : `True or False: In ${input.subject} (${input.topic}), increasing constraint coupling reduces degrees of freedom in ${qDifficulty.toLowerCase()}-level ${input.topic} models.`;
-
-        return {
-          id: `${examId}_q_${qNum}`,
-          examId,
-          order: qNum,
-          type: 'true_false',
-          prompt,
-          options: ['True', 'False'],
-          correctOptionIndex: statementTrue ? 0 : 1,
-          marks: marksArray[index],
-          topicTag,
-          difficulty: qDifficulty,
-          explanation: noteSnippet
-            ? `Derived from your source excerpt ("${noteSnippet}"). Under ${input.academicLevel} standards for ${input.subject}, evaluating boundary conditions confirms the statement is ${statementTrue ? 'True' : 'False'}.`
-            : `In ${input.topic}, standard ${qDifficulty.toLowerCase()} calibration verifies that the stated premise is ${statementTrue ? 'True' : 'False'} once boundary assumptions are accounted for.`,
-        };
-      }
-
-      const correctIdx = index % 4;
-      const basePrompts = [
-        `Which statement accurately characterizes the primary mechanism in ${input.topic} at the ${input.academicLevel} level?`,
-        `When applying ${input.topic} within ${input.subject}, which condition is necessary to preserve validity?`,
-        `In a ${qDifficulty.toLowerCase()} ${input.subject} problem on ${input.topic}, what is the most direct consequence of violating the baseline assumption?`,
-        `Which analytical approach yields the most reliable verification for ${input.topic}?`,
-      ];
-
-      const prompt = noteSnippet
-        ? `Regarding "${noteSnippet}" in ${input.topic}: which interpretation best reflects the underlying ${input.subject} concept?`
-        : basePrompts[index % basePrompts.length];
-
-      const optionsPool = [
-        `Enforces conservation of core invariants across ${input.topic} transformations`,
-        `Assumes zero variance regardless of boundary constraints or scale`,
-        `Substitutes an empirical heuristic in place of formal ${input.subject} derivation`,
-        `Reverses the causal dependency between primary and secondary variables`,
-      ];
-
-      // Rotate so correctIdx points to the sound academic option
-      const rotatedOptions = optionsPool.map((_, optIdx) => {
-        const sourceIdx = (optIdx - correctIdx + 4) % 4;
-        return optionsPool[sourceIdx];
-      });
-
-      return {
-        id: `${examId}_q_${qNum}`,
-        examId,
-        order: qNum,
-        type: 'multiple_choice',
-        prompt,
-        options: rotatedOptions,
-        correctOptionIndex: correctIdx,
-        marks: marksArray[index],
-        topicTag,
-        difficulty: qDifficulty,
-        explanation: noteSnippet
-          ? `Grounded in your provided study material ("${noteSnippet}"). Option ${String.fromCharCode(65 + correctIdx)} preserves the formal invariant required in ${input.subject}, whereas the distractors relax critical boundary constraints.`
-          : `At the ${input.academicLevel} level for ${input.topic}, Option ${String.fromCharCode(65 + correctIdx)} correctly captures the governing invariant. Distractors represent common conceptual inversions tested in ${qDifficulty.toLowerCase()} assessments.`,
-      };
-    });
-
-    const sourceSummary =
-      input.sourceMode === 'document' && input.uploadedFileName
-        ? `${input.uploadedFileName} (${Math.max(1, Math.round((input.uploadedFileSizeBytes ?? 2048) / 1024))} KB)`
-        : input.sourceMode === 'notes'
-          ? `Study Notes (${input.sourceNotes.trim().split(/\s+/).length} words)`
-          : input.sourcePrompt.trim() || `${input.subject}: ${input.topic}`;
-
-    const now = new Date().toISOString();
-    return {
-      id: examId,
-      title: `${input.subject}: ${input.topic}`,
-      subject: input.subject.trim(),
-      topic: input.topic.trim(),
-      academicLevel: input.academicLevel,
-      difficulty: input.difficulty,
-      durationMinutes: input.durationMinutes,
-      totalMarks: marksArray.reduce((a, b) => a + b, 0),
-      questionCount: questions.length,
-      sourceType: input.sourceMode,
-      sourceSummary,
-      createdAt: now,
-      updatedAt: now,
-      questions,
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
     };
+
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) {
+      const { data } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+      if (data.session?.access_token) {
+        headers.Authorization = `Bearer ${data.session.access_token}`;
+      }
+    }
+
+    let response: Response;
+    try {
+      onStageChange?.('Generating distinct questions & distractors via Gemini...');
+      response = await fetch('/api/exams/generate', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(input),
+      });
+    } catch (err) {
+      throw new Error(
+        err instanceof Error
+          ? `Unable to reach the AI exam generation server (/api/exams/generate): ${err.message}`
+          : 'Unable to reach the AI exam generation server.'
+      );
+    }
+
+    onStageChange?.('Validating answer key uniqueness & difficulty alignment...');
+
+    const payload = (await response.json().catch(() => null)) as {
+      exam?: Exam;
+      error?: { code?: string; message?: string };
+    } | null;
+
+    if (!response.ok || !payload?.exam) {
+      const serverMsg = payload?.error?.message;
+      if (response.status === 404) {
+        throw new Error(
+          'AI exam generation backend (/api/exams/generate) is not available on this host. Deploy with the Node/Express server or configure a backend API endpoint.'
+        );
+      }
+      throw new Error(
+        serverMsg || `Exam generation failed with HTTP ${response.status}. Please check server configuration and try again.`
+      );
+    }
+
+    return payload.exam;
   },
 
   async saveExam(exam: Exam): Promise<Exam> {

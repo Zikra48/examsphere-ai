@@ -34,7 +34,7 @@ export function ExamResultsPage() {
         <EmptyState
           icon={<ClipboardCheck className="w-5 h-5" />}
           title="Assessment record unavailable"
-          description="This attempt record could not be located in your local history."
+          description="This attempt record could not be located in your history."
           action={
             <Link to="/history">
               <Button>View Attempt History</Button>
@@ -64,7 +64,7 @@ export function ExamResultsPage() {
             leftIcon={<ArrowLeft className="w-3.5 h-3.5" />}
             onClick={() => navigate('/dashboard')}
           >
-            Back to Dashboard
+            Dashboard
           </Button>
           <Button
             size="sm"
@@ -88,34 +88,34 @@ export function ExamResultsPage() {
                 >
                   {attempt.passed ? 'Mastery Threshold Met' : 'Review Recommended'}
                 </Badge>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-[#9AA8BD]">
                   {formatShortDate(attempt.completedAt)}
                 </span>
               </div>
 
-              <h2 className="text-xl font-bold text-slate-900 leading-snug">
+              <h2 className="text-xl font-bold text-[#F1F5FC] leading-snug">
                 {attempt.examTitle}
               </h2>
 
               <div className="grid grid-cols-3 gap-4 pt-2">
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <p className="text-xs text-slate-500">Score</p>
-                  <p className="mt-1 text-2xl font-bold font-mono tabular-nums text-indigo-900">
+                <div className="p-3.5 rounded-xl bg-[#151F30] border border-white/[0.08]">
+                  <p className="text-xs text-[#9AA8BD]">Score</p>
+                  <p className="mt-1 text-2xl font-bold font-mono tabular-nums text-[#648BFF]">
                     {attempt.scorePercent}%
                   </p>
                 </div>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <p className="text-xs text-slate-500">Marks Earned</p>
-                  <p className="mt-1 text-2xl font-bold font-mono tabular-nums text-slate-900">
+                <div className="p-3.5 rounded-xl bg-[#151F30] border border-white/[0.08]">
+                  <p className="text-xs text-[#9AA8BD]">Marks Earned</p>
+                  <p className="mt-1 text-2xl font-bold font-mono tabular-nums text-[#F1F5FC]">
                     {attempt.earnedMarks}
-                    <span className="text-sm font-normal text-slate-500">
+                    <span className="text-sm font-normal text-[#9AA8BD]">
                       /{attempt.totalMarks}
                     </span>
                   </p>
                 </div>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <p className="text-xs text-slate-500">Time Taken</p>
-                  <p className="mt-1 text-lg sm:text-xl font-bold font-mono tabular-nums text-slate-900">
+                <div className="p-3.5 rounded-xl bg-[#151F30] border border-white/[0.08]">
+                  <p className="text-xs text-[#9AA8BD]">Time Taken</p>
+                  <p className="mt-1 text-lg sm:text-xl font-bold font-mono tabular-nums text-[#F1F5FC]">
                     {formatDurationReadable(attempt.durationTakenSeconds)}
                   </p>
                 </div>
@@ -123,25 +123,25 @@ export function ExamResultsPage() {
             </div>
 
             {/* Topic Breakdown Bars */}
-            <div className="lg:col-span-7 space-y-3 lg:pl-6 lg:border-l lg:border-slate-200">
-              <h3 className="text-sm font-semibold text-slate-900">Topic Breakdown</h3>
+            <div className="lg:col-span-7 space-y-3 lg:pl-6 lg:border-l lg:border-white/[0.08]">
+              <h3 className="text-sm font-semibold text-[#F1F5FC]">Topic Breakdown</h3>
               <div className="space-y-3">
                 {attempt.topicBreakdown.map((tb) => (
                   <div key={tb.topic} className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium text-slate-800">{tb.topic}</span>
-                      <span className="font-mono tabular-nums text-slate-600">
+                      <span className="font-medium text-[#F1F5FC]">{tb.topic}</span>
+                      <span className="font-mono tabular-nums text-[#9AA8BD]">
                         {tb.correct}/{tb.total} ({tb.accuracy}%)
                       </span>
                     </div>
-                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                    <div className="h-2 w-full rounded-full bg-[#151F30] overflow-hidden border border-white/[0.05]">
                       <div
                         className={`h-full rounded-full ${
                           tb.accuracy >= 80
-                            ? 'bg-emerald-600'
+                            ? 'bg-emerald-500'
                             : tb.accuracy >= 50
-                              ? 'bg-amber-500'
-                              : 'bg-rose-600'
+                              ? 'bg-amber-400'
+                              : 'bg-rose-500'
                         }`}
                         style={{ width: `${Math.max(4, tb.accuracy)}%` }}
                       />
@@ -156,11 +156,11 @@ export function ExamResultsPage() {
         {/* Detailed Question Review */}
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h3 className="text-base font-semibold text-slate-900">
+            <h3 className="text-base font-semibold text-[#F1F5FC]">
               Detailed Question Review
             </h3>
 
-            <div className="inline-flex p-1 bg-slate-100 border border-slate-200 rounded-lg self-start">
+            <div className="inline-flex p-1 bg-[#101827] border border-white/[0.08] rounded-lg self-start">
               {[
                 { id: 'all' as ReviewFilter, label: `All Questions (${exam.questions.length})` },
                 {
@@ -182,8 +182,8 @@ export function ExamResultsPage() {
                   onClick={() => setFilter(tab.id)}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
                     filter === tab.id
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-[#151F30] text-[#F1F5FC] border border-[#648BFF]/35'
+                      : 'text-[#9AA8BD] hover:text-[#F1F5FC] border border-transparent'
                   }`}
                 >
                   {tab.label}
@@ -212,12 +212,12 @@ export function ExamResultsPage() {
 
                 return (
                   <Card key={q.id} className="space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-white/[0.08]">
                       <div className="flex items-center gap-2.5">
-                        <span className="font-mono tabular-nums text-xs font-bold px-2.5 py-1 rounded-md bg-slate-100 text-slate-800">
+                        <span className="font-mono tabular-nums text-xs font-bold px-2.5 py-1 rounded-md bg-[#151F30] border border-white/[0.1] text-[#F1F5FC]">
                           Q{String(q.order).padStart(2, '0')}
                         </span>
-                        <span className="text-xs text-slate-500">{q.topicTag}</span>
+                        <span className="text-xs text-[#9AA8BD]">{q.topicTag}</span>
                         {ans?.isFlagged && (
                           <Badge variant="amber" icon={<Flag className="w-3 h-3" />}>
                             Flagged
@@ -241,7 +241,7 @@ export function ExamResultsPage() {
                       </Badge>
                     </div>
 
-                    <p className="text-sm sm:text-base font-medium text-slate-900 leading-relaxed">
+                    <p className="text-sm sm:text-base font-medium text-[#F1F5FC] leading-relaxed">
                       {q.prompt}
                     </p>
 
@@ -250,11 +250,11 @@ export function ExamResultsPage() {
                         const isUserChoice = selectedIdx === idx;
                         const isAnswerKey = q.correctOptionIndex === idx;
 
-                        let style = 'bg-white border-slate-200 text-slate-700';
+                        let style = 'bg-[#151F30] border-white/[0.08] text-[#9AA8BD]';
                         if (isAnswerKey) {
-                          style = 'bg-emerald-50/80 border-emerald-500 text-slate-900 font-medium';
+                          style = 'bg-emerald-500/12 border-emerald-400/50 text-[#F1F5FC] font-medium';
                         } else if (isUserChoice && !isAnswerKey) {
-                          style = 'bg-rose-50/80 border-rose-400 text-rose-900';
+                          style = 'bg-rose-500/12 border-rose-400/50 text-rose-200';
                         }
 
                         return (
@@ -269,12 +269,12 @@ export function ExamResultsPage() {
                               <span>{opt}</span>
                             </div>
                             {isAnswerKey && (
-                              <span className="text-[11px] font-semibold text-emerald-700 shrink-0">
+                              <span className="text-[11px] font-semibold text-emerald-300 shrink-0">
                                 Correct Answer
                               </span>
                             )}
                             {isUserChoice && !isAnswerKey && (
-                              <span className="text-[11px] font-semibold text-rose-700 shrink-0">
+                              <span className="text-[11px] font-semibold text-rose-300 shrink-0">
                                 Your Answer
                               </span>
                             )}
@@ -284,18 +284,17 @@ export function ExamResultsPage() {
                     </div>
 
                     {selectedIdx === null && (
-                      <p className="text-xs font-medium text-amber-700">
+                      <p className="text-xs font-medium text-amber-300">
                         You left this question unanswered during the attempt.
                       </p>
                     )}
 
-                    {/* Violet-accented AI Concept Explanation */}
-                    <div className="p-4 rounded-xl bg-violet-50 border border-violet-200 space-y-1.5">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-700">
-                        <Sparkles className="w-3.5 h-3.5" />
+                    <div className="p-4 rounded-xl bg-[#9275F5]/10 border border-[#9275F5]/25 space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-[#C1B0FF]">
+                        <Sparkles className="w-3.5 h-3.5 text-[#9275F5]" />
                         <span>AI Concept Explanation</span>
                       </div>
-                      <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                      <p className="text-xs sm:text-sm text-[#F1F5FC]/90 leading-relaxed">
                         {q.explanation}
                       </p>
                     </div>

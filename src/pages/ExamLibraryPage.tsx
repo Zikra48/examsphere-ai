@@ -61,8 +61,8 @@ export function ExamLibraryPage() {
 
   return (
     <AppShell
-      title="My Examinations Library"
-      breadcrumb="Workspace / Saved Assessments"
+      title="Exam Library"
+      breadcrumb="Assessment Studio / Saved Examinations"
       actions={
         <Link to="/exams/new">
           <Button size="sm" leftIcon={<FilePlus2 className="w-4 h-4" />}>
@@ -77,7 +77,7 @@ export function ExamLibraryPage() {
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
               <Search
-                className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"
+                className="w-4 h-4 text-[#9AA8BD] absolute left-3.5 top-1/2 -translate-y-1/2"
                 aria-hidden="true"
               />
               <input
@@ -86,7 +86,7 @@ export function ExamLibraryPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by exam title, subject, or chapter..."
                 aria-label="Search examinations"
-                className="w-full h-10 pl-10 pr-3.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-full h-10 pl-10 pr-3.5 rounded-lg border border-white/[0.1] bg-[#080D19] text-sm text-[#F1F5FC] placeholder:text-[#9AA8BD]/60 focus:outline-none focus:ring-2 focus:ring-[#648BFF]"
               />
             </div>
 
@@ -95,7 +95,7 @@ export function ExamLibraryPage() {
                 aria-label="Filter by subject"
                 value={subjectFilter}
                 onChange={(e) => setSubjectFilter(e.target.value)}
-                className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="h-10 px-3 rounded-lg border border-white/[0.1] bg-[#080D19] text-sm text-[#F1F5FC] focus:outline-none focus:ring-2 focus:ring-[#648BFF]"
               >
                 {subjects.map((sub) => (
                   <option key={sub} value={sub}>
@@ -110,7 +110,7 @@ export function ExamLibraryPage() {
                 onChange={(e) =>
                   setDifficultyFilter(e.target.value as 'All' | DifficultyLevel)
                 }
-                className="h-10 px-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="h-10 px-3 rounded-lg border border-white/[0.1] bg-[#080D19] text-sm text-[#F1F5FC] focus:outline-none focus:ring-2 focus:ring-[#648BFF]"
               >
                 <option value="All">All Difficulties</option>
                 <option value="Easy">Easy</option>
@@ -151,14 +151,14 @@ export function ExamLibraryPage() {
         ) : (
           <div className="grid md:grid-cols-2 gap-5">
             {filteredExams.map((exam) => (
-              <Card key={exam.id} className="flex flex-col justify-between space-y-5">
+              <Card key={exam.id} className="flex flex-col justify-between space-y-5 hover:border-[#648BFF]/30 transition-colors">
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-xs font-medium text-indigo-900">
+                      <p className="text-xs font-medium text-[#648BFF]">
                         {exam.subject} · {exam.academicLevel}
                       </p>
-                      <h2 className="mt-1 text-base font-bold text-slate-900 leading-snug">
+                      <h2 className="mt-1 text-base font-bold text-[#F1F5FC] leading-snug">
                         {exam.title}
                       </h2>
                     </div>
@@ -167,9 +167,9 @@ export function ExamLibraryPage() {
                     </Badge>
                   </div>
 
-                  <p className="text-xs text-slate-500 line-clamp-2">{exam.topic}</p>
+                  <p className="text-xs text-[#9AA8BD] line-clamp-2">{exam.topic}</p>
 
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-600 pt-1">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[#9AA8BD] pt-1">
                     <span className="font-mono tabular-nums">
                       {exam.questionCount} questions
                     </span>
@@ -177,13 +177,13 @@ export function ExamLibraryPage() {
                     <span className="font-mono tabular-nums">{exam.totalMarks} marks</span>
                     <span aria-hidden="true">·</span>
                     <span className="inline-flex items-center gap-1 font-mono tabular-nums">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      <Clock className="w-3.5 h-3.5 text-[#9AA8BD]" />
                       {exam.durationMinutes} min
                     </span>
                     {exam.lastScorePercent !== undefined && (
                       <>
                         <span aria-hidden="true">·</span>
-                        <span className="font-mono tabular-nums font-semibold text-emerald-700">
+                        <span className="font-mono tabular-nums font-semibold text-emerald-400">
                           Last: {exam.lastScorePercent}%
                         </span>
                       </>
@@ -191,8 +191,8 @@ export function ExamLibraryPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-xs text-slate-400">
+                <div className="pt-4 border-t border-white/[0.08] flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-xs text-[#9AA8BD]">
                     Updated {formatShortDate(exam.updatedAt)}
                   </span>
 
@@ -201,7 +201,7 @@ export function ExamLibraryPage() {
                       type="button"
                       onClick={() => setExamToDelete(exam)}
                       aria-label={`Delete ${exam.title}`}
-                      className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors cursor-pointer"
+                      className="p-2 rounded-lg border border-white/[0.1] bg-[#151F30] text-[#9AA8BD] hover:text-rose-400 hover:bg-rose-500/15 hover:border-rose-500/30 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -232,7 +232,7 @@ export function ExamLibraryPage() {
         isOpen={Boolean(examToDelete)}
         onClose={() => setExamToDelete(null)}
         title="Delete Examination?"
-        description="This removes the exam blueprint from your local library."
+        description="This removes the exam blueprint from your library."
         footer={
           <>
             <Button variant="secondary" onClick={() => setExamToDelete(null)}>
@@ -244,9 +244,9 @@ export function ExamLibraryPage() {
           </>
         }
       >
-        <p className="text-sm text-slate-700">
+        <p className="text-sm text-[#9AA8BD]">
           Are you sure you want to remove{' '}
-          <span className="font-semibold text-slate-900">{examToDelete?.title}</span>? Past
+          <span className="font-semibold text-[#F1F5FC]">{examToDelete?.title}</span>? Past
           attempt records will remain in your Attempt History.
         </p>
       </Modal>

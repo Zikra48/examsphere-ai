@@ -46,17 +46,17 @@ export function ForgotPasswordPage() {
   const activeError = error || configError;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4 sm:px-6">
+    <div className="min-h-screen bg-[#080D19] flex flex-col justify-center py-12 px-4 sm:px-6">
       <div className="sm:mx-auto sm:w-full sm:max-w-md mb-6 flex items-center justify-between">
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[#9AA8BD] hover:text-[#F1F5FC]"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Return to Sign In</span>
         </Link>
-        <Link to="/" className="inline-flex items-center gap-2 font-bold text-slate-900">
-          <span className="w-7 h-7 rounded-lg bg-indigo-900 text-white flex items-center justify-center">
+        <Link to="/" className="inline-flex items-center gap-2 font-bold text-[#F1F5FC]">
+          <span className="w-7 h-7 rounded-lg bg-[#648BFF] text-[#080D19] flex items-center justify-center">
             <Compass className="w-4 h-4" />
           </span>
           <span>ExamSphere AI</span>
@@ -67,12 +67,12 @@ export function ForgotPasswordPage() {
         <Card padding="lg">
           {submitted ? (
             <div className="text-center space-y-4 py-2">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h1 className="text-xl font-bold text-slate-900">Check your inbox</h1>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                If an account exists for <span className="font-semibold text-slate-900">{email}</span>,
+              <h1 className="text-xl font-bold text-[#F1F5FC]">Check your inbox</h1>
+              <p className="text-sm text-[#9AA8BD] leading-relaxed">
+                If an account exists for <span className="font-semibold text-[#F1F5FC]">{email}</span>,
                 password recovery instructions have been sent.
               </p>
               <div className="pt-2">
@@ -84,13 +84,13 @@ export function ForgotPasswordPage() {
           ) : (
             <>
               <div className="mb-6">
-                <div className="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-900 flex items-center justify-center mb-4">
+                <div className="w-10 h-10 rounded-lg bg-[#648BFF]/15 border border-[#648BFF]/30 text-[#648BFF] flex items-center justify-center mb-4">
                   <Mail className="w-5 h-5" />
                 </div>
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                <h1 className="text-2xl font-bold text-[#F1F5FC] tracking-tight">
                   Reset your password
                 </h1>
-                <p className="mt-1.5 text-sm text-slate-500">
+                <p className="mt-1.5 text-sm text-[#9AA8BD]">
                   Enter the email associated with your workspace to receive a recovery link.
                 </p>
               </div>
@@ -98,7 +98,7 @@ export function ForgotPasswordPage() {
               {activeError && (
                 <div
                   role="alert"
-                  className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-medium text-rose-700"
+                  className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-xs font-medium text-rose-300"
                 >
                   {activeError}
                 </div>
@@ -108,7 +108,7 @@ export function ForgotPasswordPage() {
                 <div>
                   <label
                     htmlFor="reset-email"
-                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                    className="block text-sm font-medium text-[#F1F5FC] mb-1.5"
                   >
                     Email address
                   </label>
@@ -119,7 +119,7 @@ export function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="student@university.edu"
-                    className="w-full h-10 px-3.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
+                    className="w-full h-10 px-3.5 rounded-lg border border-white/[0.1] bg-[#080D19] text-sm text-[#F1F5FC] placeholder:text-[#9AA8BD]/60 focus:outline-none focus:ring-2 focus:ring-[#648BFF] focus:border-transparent"
                   />
                 </div>
 

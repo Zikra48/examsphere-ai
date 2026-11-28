@@ -11,15 +11,15 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
   primary:
-    'bg-indigo-900 text-white hover:bg-indigo-600 border border-transparent shadow-xs',
+    'bg-[#648BFF] text-[#080D19] font-semibold hover:bg-[#7A9CFF] border border-[#648BFF]/20 shadow-[0_1px_2px_rgba(8,13,25,0.45)]',
   secondary:
-    'bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 border border-slate-200 shadow-xs',
+    'bg-[#151F30] text-[#F1F5FC] hover:bg-[#1C2940] border border-white/[0.1] hover:border-[#648BFF]/35',
   ghost:
-    'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent',
+    'bg-transparent text-[#9AA8BD] hover:bg-white/[0.06] hover:text-[#F1F5FC] border border-transparent',
   danger:
-    'bg-rose-600 text-white hover:bg-rose-700 border border-transparent shadow-xs',
+    'bg-rose-600/90 text-white hover:bg-rose-500 border border-rose-400/20',
   violet:
-    'bg-violet-600 text-white hover:bg-violet-700 border border-transparent shadow-xs',
+    'bg-[#9275F5] text-[#080D19] font-semibold hover:bg-[#A48BF7] border border-[#9275F5]/25',
 };
 
 const sizeClasses: Record<NonNullable<ButtonProps['size']>, string> = {
@@ -44,7 +44,7 @@ export function Button({
     <button
       type={type}
       disabled={disabled || isLoading}
-      className={`inline-flex items-center justify-center font-medium rounded-lg whitespace-nowrap shrink-0 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center justify-center font-medium rounded-lg whitespace-nowrap shrink-0 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#648BFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#080D19] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       {...props}
     >
       {isLoading ? (

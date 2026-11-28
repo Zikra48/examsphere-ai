@@ -4,6 +4,8 @@ import {
   ArrowDown,
   ArrowUp,
   BookOpen,
+  Eye,
+  EyeOff,
   Play,
   Plus,
   Save,
@@ -27,6 +29,7 @@ export function ExamEditPage() {
   const sourceExam = exams.find((e) => e.id === id);
   const [draft, setDraft] = useState<Exam | null>(sourceExam ? structuredClone(sourceExam) : null);
   const [saving, setSaving] = useState(false);
+  const [studentPreviewMode, setStudentPreviewMode] = useState(false);
 
   useEffect(() => {
     if (sourceExam) {
@@ -36,11 +39,11 @@ export function ExamEditPage() {
 
   if (!draft) {
     return (
-      <AppShell title="Examination Not Found" breadcrumb="Workspace / My Library">
+      <AppShell title="Examination Not Found" breadcrumb="Workspace / Exam Library">
         <EmptyState
           icon={<BookOpen className="w-5 h-5" />}
           title="We could not locate this examination"
-          description="It may have been removed from your local library."
+          description="It may have been removed from your library."
           action={
             <Link to="/exams">
               <Button>Return to Library</Button>
@@ -81,7 +84,7 @@ export function ExamEditPage() {
           const padded =
             q.options.length >= 4
               ? q.options.slice(0, 4)
-              : ['Option A', 'Option B', 'Option C', 'Option D'];
+              : ['Choice A', 'Choice B', 'Choice C', 'Choice D'];
           return {
             ...q,
             type: 'multiple_choice',
@@ -129,7 +132,7 @@ export function ExamEditPage() {
       order: nextNum,
       type: 'multiple_choice',
       prompt: `New ${draft.subject} question on ${draft.topic}`,
-      options: ['Option A', 'Option B', 'Option C', 'Option D'],
+      options: ['Choice A', 'Choice B', 'Choice C', 'Choice D'],
       correctOptionIndex: 0,
       marks: 5,
       topicTag: draft.topic.split(',')[0].trim() || draft.subject,
@@ -159,10 +162,20 @@ export function ExamEditPage() {
 
   return (
     <AppShell
-      title="Preview & Edit Examination"
-      breadcrumb={`Library / ${draft.subject}`}
+      title={studentPreviewMode ? 'Student Exam Preview' : 'Preview & Edit Examination'}
+      breadcrumb={`Exam Library / ${draft.subject}`}
       actions={
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            leftIcon={studentPreviewMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            onClick={() => setStudentPreviewMode((prev) => !prev)}
+          >
+            <span className="hidden sm:inline">
+              {studentPreviewMode ? 'Show Answer Key' : 'Hide Answer Key'}
+            </span>
+          </Button>
           <Button
             size="sm"
             variant="secondary"
@@ -170,7 +183,7 @@ export function ExamEditPage() {
             leftIcon={<Save className="w-3.5 h-3.5" />}
             onClick={() => handleSave(false)}
           >
-            Save to Library
+            Save
           </Button>
           <Button
             size="sm"
@@ -184,19 +197,20 @@ export function ExamEditPage() {
       }
     >
       <div className="space-y-6">
-        {/* Editable Header Card */}
+        {/* Header Blueprint Card */}
         <Card className="space-y-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <label htmlFor="exam-title-input" className="block text-xs font-medium text-slate-500 mb-1">
+              <label htmlFor="exam-title-input" className="block text-xs font-medium text-[#9AA8BD] mb-1">
                 Examination Title
               </label>
               <input
                 id="exam-title-input"
                 type="text"
+                readOnly={studentPreviewMode}
                 value={draft.title}
                 onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                className="w-full text-lg sm:text-xl font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-full text-lg sm:text-xl font-bold text-[#F1F5FC] bg-[#080D19] border border-white/[0.1] rounded-lg px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-[#648BFF]"
               />
             </div>
 
@@ -204,18 +218,16 @@ export function ExamEditPage() {
               <Badge variant={getDifficultyBadgeVariant(draft.difficulty)}>
                 {draft.difficulty}
               </Badge>
-              <Badge variant="slate">
-                <span className="font-mono tabular-nums">{draft.questions.length} Questions</span>
-              </Badge>
-              <Badge variant="indigo">
-                <span className="font-mono tabular-nums">{totalMarksComputed} Marks</span>
-              </Badge>
-              <div className="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-200 rounded-md px-2.5 py-1 text-xs">
-                <span className="text-slate-600">Timer:</span>
+              <span className="text-xs font-mono tabular-nums text-[#9AA8BD]">
+                {draft.questions.length} Qs · {totalMarksComputed} Marks
+              </span>
+              <div className="inline-flex items-center gap-1.5 bg-[#151F30] border border-white/[0.1] rounded-md px-2.5 py-1 text-xs">
+                <span className="text-[#9AA8BD]">Timer:</span>
                 <input
                   type="number"
                   min={5}
                   max={180}
+                  readOnly={studentPreviewMode}
                   aria-label="Duration in minutes"
                   value={draft.durationMinutes}
                   onChange={(e) =>
@@ -224,182 +236,221 @@ export function ExamEditPage() {
                       durationMinutes: Math.max(5, Number(e.target.value) || 5),
                     })
                   }
-                  className="w-12 bg-white border border-slate-200 rounded px-1.5 py-0.5 font-mono tabular-nums text-xs text-slate-900"
+                  className="w-12 bg-[#080D19] border border-white/[0.1] rounded px-1.5 py-0.5 font-mono tabular-nums text-xs text-[#F1F5FC]"
                 />
-                <span className="text-slate-600">min</span>
+                <span className="text-[#9AA8BD]">min</span>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200">
-            <p className="text-xs text-slate-500">
-              Source: <span className="font-medium text-slate-700">{draft.sourceSummary}</span>
+          {draft.instructions && (
+            <div className="px-3.5 py-2.5 rounded-lg bg-[#151F30] border border-white/[0.08] text-xs text-[#9AA8BD]">
+              <span className="font-semibold text-[#F1F5FC]">Instructions: </span>
+              {draft.instructions}
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/[0.08]">
+            <p className="text-xs text-[#9AA8BD] truncate max-w-2xl">
+              Source: <span className="font-medium text-[#F1F5FC]">{draft.sourceSummary}</span>
             </p>
-            <Button
-              size="sm"
-              variant="secondary"
-              leftIcon={<Plus className="w-3.5 h-3.5" />}
-              onClick={addQuestion}
-            >
-              Add Question
-            </Button>
+            {!studentPreviewMode && (
+              <Button
+                size="sm"
+                variant="secondary"
+                leftIcon={<Plus className="w-3.5 h-3.5" />}
+                onClick={addQuestion}
+              >
+                Add Question
+              </Button>
+            )}
           </div>
         </Card>
 
-        {/* Interactive Question Cards */}
+        {/* Distinct Question Cards */}
         <div className="space-y-4">
           {draft.questions.map((question, qIndex) => (
             <Card key={question.id} className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/[0.08]">
                 <div className="flex items-center gap-3">
-                  <span className="px-2.5 py-1 rounded-md bg-indigo-900 text-white font-mono tabular-nums text-xs font-semibold">
+                  <span className="px-2.5 py-1 rounded-md bg-[#648BFF] text-[#080D19] font-mono tabular-nums text-xs font-bold">
                     Q{String(qIndex + 1).padStart(2, '0')}
                   </span>
 
-                  <select
-                    aria-label={`Question ${qIndex + 1} format`}
-                    value={question.type}
-                    onChange={(e) =>
-                      handleTypeChange(question.id, e.target.value as QuestionType)
-                    }
-                    className="h-8 px-2.5 rounded-md border border-slate-200 bg-white text-xs font-medium text-slate-700"
-                  >
-                    <option value="multiple_choice">Multiple Choice</option>
-                    <option value="true_false">True / False</option>
-                  </select>
+                  {studentPreviewMode ? (
+                    <span className="text-xs text-[#9AA8BD]">
+                      {question.topicTag} · {question.difficulty}
+                    </span>
+                  ) : (
+                    <>
+                      <select
+                        aria-label={`Question ${qIndex + 1} format`}
+                        value={question.type}
+                        onChange={(e) =>
+                          handleTypeChange(question.id, e.target.value as QuestionType)
+                        }
+                        className="h-8 px-2.5 rounded-md border border-white/[0.1] bg-[#080D19] text-xs font-medium text-[#F1F5FC]"
+                      >
+                        <option value="multiple_choice">Multiple Choice</option>
+                        <option value="true_false">True / False</option>
+                      </select>
 
-                  <div className="inline-flex items-center gap-1.5 text-xs text-slate-600">
-                    <span>Marks:</span>
+                      <div className="inline-flex items-center gap-1.5 text-xs text-[#9AA8BD]">
+                        <span>Marks:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={25}
+                          aria-label={`Question ${qIndex + 1} marks`}
+                          value={question.marks}
+                          onChange={(e) =>
+                            updateQuestion(question.id, {
+                              marks: Math.max(1, Number(e.target.value) || 1),
+                            })
+                          }
+                          className="w-14 h-8 px-2 rounded-md border border-white/[0.1] bg-[#080D19] font-mono tabular-nums text-xs text-[#F1F5FC]"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {studentPreviewMode ? (
+                  <span className="font-mono tabular-nums text-xs text-[#9AA8BD]">
+                    {question.marks} Marks
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={qIndex === 0}
+                      onClick={() => moveQuestion(qIndex, -1)}
+                      aria-label="Move question up"
+                      className="p-1.5 rounded-lg border border-white/[0.1] bg-[#151F30] text-[#9AA8BD] hover:text-[#F1F5FC] disabled:opacity-40 cursor-pointer"
+                    >
+                      <ArrowUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={qIndex === draft.questions.length - 1}
+                      onClick={() => moveQuestion(qIndex, 1)}
+                      aria-label="Move question down"
+                      className="p-1.5 rounded-lg border border-white/[0.1] bg-[#151F30] text-[#9AA8BD] hover:text-[#F1F5FC] disabled:opacity-40 cursor-pointer"
+                    >
+                      <ArrowDown className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={draft.questions.length <= 1}
+                      onClick={() => deleteQuestion(question.id)}
+                      aria-label="Delete question"
+                      className="p-1.5 rounded-lg border border-white/[0.1] bg-[#151F30] text-rose-400 hover:bg-rose-500/15 disabled:opacity-40 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {studentPreviewMode ? (
+                <p className="text-base font-medium text-[#F1F5FC] leading-relaxed">
+                  {question.prompt}
+                </p>
+              ) : (
+                <div className="grid sm:grid-cols-4 gap-3">
+                  <div className="sm:col-span-3">
+                    <label className="block text-xs font-medium text-[#9AA8BD] mb-1">
+                      Question Prompt
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={question.prompt}
+                      onChange={(e) => updateQuestion(question.id, { prompt: e.target.value })}
+                      className="w-full p-3 rounded-lg border border-white/[0.1] bg-[#080D19] text-sm text-[#F1F5FC] focus:outline-none focus:ring-2 focus:ring-[#648BFF]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[#9AA8BD] mb-1">
+                      Topic Tag
+                    </label>
                     <input
-                      type="number"
-                      min={1}
-                      max={25}
-                      aria-label={`Question ${qIndex + 1} marks`}
-                      value={question.marks}
-                      onChange={(e) =>
-                        updateQuestion(question.id, {
-                          marks: Math.max(1, Number(e.target.value) || 1),
-                        })
-                      }
-                      className="w-14 h-8 px-2 rounded-md border border-slate-200 font-mono tabular-nums text-xs text-slate-900"
+                      type="text"
+                      value={question.topicTag}
+                      onChange={(e) => updateQuestion(question.id, { topicTag: e.target.value })}
+                      className="w-full h-10 px-3 rounded-lg border border-white/[0.1] bg-[#080D19] text-xs text-[#F1F5FC] focus:outline-none focus:ring-2 focus:ring-[#648BFF]"
                     />
                   </div>
                 </div>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    disabled={qIndex === 0}
-                    onClick={() => moveQuestion(qIndex, -1)}
-                    aria-label="Move question up"
-                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
-                  >
-                    <ArrowUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={qIndex === draft.questions.length - 1}
-                    onClick={() => moveQuestion(qIndex, 1)}
-                    aria-label="Move question down"
-                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
-                  >
-                    <ArrowDown className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={draft.questions.length <= 1}
-                    onClick={() => deleteQuestion(question.id)}
-                    aria-label="Delete question"
-                    className="p-1.5 rounded-lg border border-slate-200 text-rose-600 hover:bg-rose-50 disabled:opacity-40 cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid sm:grid-cols-4 gap-3">
-                <div className="sm:col-span-3">
-                  <label className="block text-xs font-medium text-slate-500 mb-1">
-                    Question Prompt
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={question.prompt}
-                    onChange={(e) => updateQuestion(question.id, { prompt: e.target.value })}
-                    className="w-full p-3 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">
-                    Topic Tag
-                  </label>
-                  <input
-                    type="text"
-                    value={question.topicTag}
-                    onChange={(e) => updateQuestion(question.id, { topicTag: e.target.value })}
-                    className="w-full h-10 px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                  />
-                </div>
-              </div>
+              )}
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-slate-500">
-                  Options (select radio button for correct answer)
-                </p>
+                {!studentPreviewMode && (
+                  <p className="text-xs font-medium text-[#9AA8BD]">
+                    Options (select radio button for correct answer)
+                  </p>
+                )}
                 <div className="grid sm:grid-cols-2 gap-2.5">
                   {question.options.map((opt, optIdx) => {
-                    const isCorrect = question.correctOptionIndex === optIdx;
+                    const isCorrect = !studentPreviewMode && question.correctOptionIndex === optIdx;
                     return (
                       <div
                         key={optIdx}
-                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border ${
+                        className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border ${
                           isCorrect
-                            ? 'bg-emerald-50/70 border-emerald-400'
-                            : 'bg-white border-slate-200'
+                            ? 'bg-emerald-500/12 border-emerald-400/45'
+                            : 'bg-[#151F30] border-white/[0.08]'
                         }`}
                       >
-                        <input
-                          type="radio"
-                          name={`correct_${question.id}`}
-                          checked={isCorrect}
-                          onChange={() =>
-                            updateQuestion(question.id, { correctOptionIndex: optIdx })
-                          }
-                          aria-label={`Mark option ${String.fromCharCode(65 + optIdx)} correct`}
-                          className="w-4 h-4 text-emerald-600 focus:ring-emerald-600 cursor-pointer"
-                        />
-                        <span className="font-mono text-xs font-semibold text-slate-500 w-4">
-                          {String.fromCharCode(65 + optIdx)}
+                        {!studentPreviewMode && (
+                          <input
+                            type="radio"
+                            name={`correct_${question.id}`}
+                            checked={question.correctOptionIndex === optIdx}
+                            onChange={() =>
+                              updateQuestion(question.id, { correctOptionIndex: optIdx })
+                            }
+                            aria-label={`Mark option ${String.fromCharCode(65 + optIdx)} correct`}
+                            className="w-4 h-4 accent-emerald-400 cursor-pointer shrink-0"
+                          />
+                        )}
+                        <span className="font-mono text-xs font-semibold text-[#648BFF] w-5 shrink-0">
+                          {String.fromCharCode(65 + optIdx)}.
                         </span>
-                        <input
-                          type="text"
-                          value={opt}
-                          readOnly={question.type === 'true_false'}
-                          onChange={(e) => {
-                            const updatedOpts = [...question.options];
-                            updatedOpts[optIdx] = e.target.value;
-                            updateQuestion(question.id, { options: updatedOpts });
-                          }}
-                          className="flex-1 min-w-0 bg-transparent text-sm text-slate-900 focus:outline-none"
-                        />
+                        {studentPreviewMode ? (
+                          <span className="text-sm text-[#F1F5FC]">{opt}</span>
+                        ) : (
+                          <input
+                            type="text"
+                            value={opt}
+                            readOnly={question.type === 'true_false'}
+                            onChange={(e) => {
+                              const updatedOpts = [...question.options];
+                              updatedOpts[optIdx] = e.target.value;
+                              updateQuestion(question.id, { options: updatedOpts });
+                            }}
+                            className="flex-1 min-w-0 bg-transparent text-sm text-[#F1F5FC] focus:outline-none"
+                          />
+                        )}
                       </div>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-violet-50 border border-violet-200 space-y-1.5">
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-violet-700">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Concept Explanation (Shown After Submission)</span>
-                </label>
-                <textarea
-                  rows={2}
-                  value={question.explanation}
-                  onChange={(e) => updateQuestion(question.id, { explanation: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border border-violet-200 bg-white text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-600"
-                />
-              </div>
+              {!studentPreviewMode && (
+                <div className="p-3.5 rounded-xl bg-[#9275F5]/10 border border-[#9275F5]/25 space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-[#C1B0FF]">
+                    <Sparkles className="w-3.5 h-3.5 text-[#9275F5]" />
+                    <span>Concept Explanation (Hidden Until Submission)</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={question.explanation}
+                    onChange={(e) => updateQuestion(question.id, { explanation: e.target.value })}
+                    className="w-full p-2.5 rounded-lg border border-[#9275F5]/25 bg-[#080D19] text-xs sm:text-sm text-[#F1F5FC] focus:outline-none focus:ring-2 focus:ring-[#9275F5]"
+                  />
+                </div>
+              )}
             </Card>
           ))}
         </div>
